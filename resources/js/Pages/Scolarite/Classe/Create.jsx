@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import AdminLayout from "@/Layouts/AdminLayout";
 import { Head, useForm, Link } from "@inertiajs/react";
-import { Card, FormField, Alert } from "@/Components/UI/ProfessionalComponents";
+import { Card, FormField, Alert } from "@/Components/UI/Composant";
 
-export default function CreateClass({ academicYears, courses, levels }) {
+export default function Create({ academicYears, courses, levels }) {
     const [selectedCourses, setSelectedCourses] = useState([]);
     const [totalCredits, setTotalCredits] = useState(0);
     const [totalHours, setTotalHours] = useState(0);
@@ -21,7 +21,7 @@ export default function CreateClass({ academicYears, courses, levels }) {
         tuition_fee: 0,
         semester_duration: 6,
     });
-
+    console.log(courses);
     // Générer automatiquement le code de la classe
     useEffect(() => {
         if (data.level && data.specialization && !data.code) {
@@ -701,7 +701,7 @@ export default function CreateClass({ academicYears, courses, levels }) {
                 </div>
             </section>
 
-            <style jsx>{`
+            <style>{`
                 .cursor-pointer {
                     cursor: pointer;
                     transition: all 0.2s ease;

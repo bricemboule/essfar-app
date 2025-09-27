@@ -3,67 +3,82 @@ import AdminLayout from "@/Layouts/AdminLayout";
 import { Head, Link, useForm, router } from "@inertiajs/react";
 import { Card, Alert } from "@/Components/UI/Composant";
 
-export default function Index({ classes, academicYears, auth }) {
-    const [searchTerm, setSearchTerm] = useState("");
-    const [filterYear, setFilterYear] = useState("");
-    const [filterLevel, setFilterLevel] = useState("");
+export default function Index({ classrooms, stats, filters, buildings, auth }) {
+    const [searchTerm, setSearchTerm] = useState(filters.search || "");
+    const [filterBuilding, setFilterBuilding] = useState(
+        filters.building || ""
+    );
+    const [filterAvailable, setFilterAvailable] = useState(
+        filters.is_available || ""
+    );
+    const [minCapacity, setMinCapacity] = useState(filters.min_capacity || "");
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [classToDelete, setClassToDelete] = useState(null);
+    const [classroomToDelete, setClassroomToDelete] = useState(null);
 
     const { delete: destroy, processing } = useForm();
 
-    const filteredClasses = classes.data.filter((schoolClass) => {
-        const matchesSearch =
-            schoolClass.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            schoolClass.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            schoolClass.level.toLowerCase().includes(searchTerm.toLowerCase());
-
-        const matchesYear =
-            !filterYear ||
-            schoolClass.academic_year.id.toString() === filterYear;
-
-        const matchesLevel = !filterLevel || schoolClass.level === filterLevel;
-
-        return matchesSearch && matchesYear && matchesLevel;
-    });
-
-    const handleDelete = (schoolClass) => {
-        setClassToDelete(schoolClass);
+    const handleDelete = (classroom) => {
+        setClassroomToDelete(classroom);
         setShowDeleteModal(true);
     };
 
     const confirmDelete = () => {
-        if (classToDelete) {
-            destroy(route("academic.classes.destroy", classToDelete.id), {
-                onSuccess: () => {
-                    setShowDeleteModal(false);
-                    setClassToDelete(null);
-                },
-            });
+        if (classroomToDelete) {
+            destroy(
+                route("academic.classrooms.destroy", classroomToDelete.id),
+                {
+                    onSuccess: () => {
+                        setShowDeleteModal(false);
+                        setClassroomToDelete(null);
+                    },
+                }
+            );
         }
     };
 
-    const getProgressColor = (current, max) => {
-        const percentage = (current / max) * 100;
-        if (percentage >= 90) return "bg-danger";
-        if (percentage >= 75) return "bg-warning";
-        if (percentage >= 50) return "bg-info";
-        return "bg-success";
+    const handleSearch = () => {
+        router.get(route("academic.classrooms.index"), {
+            search: searchTerm,
+            building: filterBuilding,
+            is_available: filterAvailable,
+            min_capacity: minCapacity,
+        });
     };
 
-    const levels = [...new Set(classes.data.map((c) => c.level))];
+    const handleReset = () => {
+        setSearchTerm("");
+        setFilterBuilding("");
+        setFilterAvailable("");
+        setMinCapacity("");
+        router.get(route("academic.classrooms.index"));
+    };
+
+    const getCapacityColor = (capacity) => {
+        if (capacity >= 100) return "text-success";
+        if (capacity >= 50) return "text-info";
+        if (capacity >= 20) return "text-warning";
+        return "text-secondary";
+    };
+
+    const getAvailabilityBadge = (isAvailable) => {
+        return isAvailable ? (
+            <span className="badge badge-success">Disponible</span>
+        ) : (
+            <span className="badge badge-danger">Indisponible</span>
+        );
+    };
 
     return (
-        <AdminLayout title="Gestion des classes">
-            <Head title="Classes" />
+        <AdminLayout title="Gestion des salles">
+            <Head title="Salles de classe" />
 
             <div className="content-header">
                 <div className="container-fluid">
                     <div className="row mb-2">
                         <div className="col-sm-6">
                             <h1 className="m-0">
-                                <i className="fas fa-users mr-2 text-primary"></i>
-                                Gestion des classes
+                                <i className="fas fa-door-open mr-2 text-primary"></i>
+                                Gestion des salles
                             </h1>
                         </div>
                         <div className="col-sm-6">
@@ -74,7 +89,7 @@ export default function Index({ classes, academicYears, auth }) {
                                     </Link>
                                 </li>
                                 <li className="breadcrumb-item active">
-                                    Classes
+                                    Salles
                                 </li>
                             </ol>
                         </div>
@@ -89,69 +104,44 @@ export default function Index({ classes, academicYears, auth }) {
                         <div className="col-lg-3 col-6">
                             <div className="small-box bg-info">
                                 <div className="inner">
-                                    <h3>{classes.total}</h3>
-                                    <p>Classes totales</p>
+                                    <h3>{stats.total}</h3>
+                                    <p>Salles totales</p>
                                 </div>
                                 <div className="icon">
-                                    <i className="fas fa-school"></i>
+                                    <i className="fas fa-door-open"></i>
                                 </div>
                             </div>
                         </div>
                         <div className="col-lg-3 col-6">
                             <div className="small-box bg-success">
                                 <div className="inner">
-                                    <h3>
-                                        {classes.data.reduce(
-                                            (sum, c) => sum + c.students_count,
-                                            0
-                                        )}
-                                    </h3>
-                                    <p>Étudiants inscrits</p>
+                                    <h3>{stats.available}</h3>
+                                    <p>Salles disponibles</p>
                                 </div>
                                 <div className="icon">
-                                    <i className="fas fa-user-graduate"></i>
+                                    <i className="fas fa-check-circle"></i>
                                 </div>
                             </div>
                         </div>
                         <div className="col-lg-3 col-6">
                             <div className="small-box bg-warning">
                                 <div className="inner">
-                                    <h3>
-                                        {classes.data.reduce(
-                                            (sum, c) => sum + c.courses_count,
-                                            0
-                                        )}
-                                    </h3>
-                                    <p>Cours programmés</p>
+                                    <h3>{stats.total_capacity}</h3>
+                                    <p>Capacité totale</p>
                                 </div>
                                 <div className="icon">
-                                    <i className="fas fa-book"></i>
+                                    <i className="fas fa-users"></i>
                                 </div>
                             </div>
                         </div>
                         <div className="col-lg-3 col-6">
                             <div className="small-box bg-danger">
                                 <div className="inner">
-                                    <h3>
-                                        {Math.round(
-                                            (classes.data.reduce(
-                                                (sum, c) =>
-                                                    sum + c.students_count,
-                                                0
-                                            ) /
-                                                classes.data.reduce(
-                                                    (sum, c) =>
-                                                        sum + c.capacity,
-                                                    0
-                                                )) *
-                                                100
-                                        ) || 0}
-                                        %
-                                    </h3>
-                                    <p>Taux d'occupation</p>
+                                    <h3>{stats.buildings.length}</h3>
+                                    <p>Bâtiments</p>
                                 </div>
                                 <div className="icon">
-                                    <i className="fas fa-chart-pie"></i>
+                                    <i className="fas fa-building"></i>
                                 </div>
                             </div>
                         </div>
@@ -164,7 +154,7 @@ export default function Index({ classes, academicYears, auth }) {
                         className="mb-4"
                     >
                         <div className="row">
-                            <div className="col-md-4">
+                            <div className="col-md-3">
                                 <div className="form-group">
                                     <label>Recherche</label>
                                     <div className="input-group">
@@ -176,7 +166,7 @@ export default function Index({ classes, academicYears, auth }) {
                                         <input
                                             type="text"
                                             className="form-control"
-                                            placeholder="Nom, code ou niveau..."
+                                            placeholder="Nom, code, bâtiment..."
                                             value={searchTerm}
                                             onChange={(e) =>
                                                 setSearchTerm(e.target.value)
@@ -185,199 +175,219 @@ export default function Index({ classes, academicYears, auth }) {
                                     </div>
                                 </div>
                             </div>
-                            <div className="col-md-3">
+                            <div className="col-md-2">
                                 <div className="form-group">
-                                    <label>Année académique</label>
+                                    <label>Bâtiment</label>
                                     <select
                                         className="form-control"
-                                        value={filterYear}
+                                        value={filterBuilding}
                                         onChange={(e) =>
-                                            setFilterYear(e.target.value)
+                                            setFilterBuilding(e.target.value)
                                         }
                                     >
-                                        <option value="">
-                                            Toutes les années
-                                        </option>
-                                        {academicYears.map((year) => (
+                                        <option value="">Tous</option>
+                                        {buildings.map((building) => (
                                             <option
-                                                key={year.id}
-                                                value={year.id}
+                                                key={building}
+                                                value={building}
                                             >
-                                                {year.name}{" "}
-                                                {year.is_active
-                                                    ? "(Active)"
-                                                    : ""}
+                                                {building}
                                             </option>
                                         ))}
                                     </select>
                                 </div>
                             </div>
-                            <div className="col-md-3">
+                            <div className="col-md-2">
                                 <div className="form-group">
-                                    <label>Niveau</label>
+                                    <label>Disponibilité</label>
                                     <select
                                         className="form-control"
-                                        value={filterLevel}
+                                        value={filterAvailable}
                                         onChange={(e) =>
-                                            setFilterLevel(e.target.value)
+                                            setFilterAvailable(e.target.value)
                                         }
                                     >
-                                        <option value="">
-                                            Tous les niveaux
-                                        </option>
-                                        {levels.map((level) => (
-                                            <option key={level} value={level}>
-                                                {level}
-                                            </option>
-                                        ))}
+                                        <option value="">Toutes</option>
+                                        <option value="1">Disponibles</option>
+                                        <option value="0">Indisponibles</option>
                                     </select>
                                 </div>
                             </div>
-                            <div className="col-md-2 d-flex align-items-end">
-                                <div className="form-group mb-0 w-100">
-                                    <Link
-                                        href={route("academic.classes.create")}
-                                        className="btn btn-primary btn-block"
-                                    >
-                                        <i className="fas fa-plus mr-1"></i>
-                                        Nouvelle classe
-                                    </Link>
+                            <div className="col-md-2">
+                                <div className="form-group">
+                                    <label>Capacité min.</label>
+                                    <input
+                                        type="number"
+                                        className="form-control"
+                                        placeholder="Ex: 20"
+                                        value={minCapacity}
+                                        onChange={(e) =>
+                                            setMinCapacity(e.target.value)
+                                        }
+                                        min="1"
+                                    />
                                 </div>
+                            </div>
+                            <div className="col-md-3 d-flex align-items-end">
+                                <div className="form-group mb-0 w-100 d-flex gap-2">
+                                    <button
+                                        type="button"
+                                        className="btn btn-primary"
+                                        onClick={handleSearch}
+                                    >
+                                        <i className="fas fa-search mr-1"></i>
+                                        Rechercher
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary"
+                                        onClick={handleReset}
+                                    >
+                                        <i className="fas fa-times mr-1"></i>
+                                        Reset
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="row mt-2">
+                            <div className="col-md-12 text-right">
+                                <Link
+                                    href={route("academic.classrooms.create")}
+                                    className="btn btn-success"
+                                >
+                                    <i className="fas fa-plus mr-1"></i>
+                                    Nouvelle salle
+                                </Link>
                             </div>
                         </div>
                     </Card>
 
-                    {/* Liste des classes */}
-                    <Card title="Liste des classes" icon="fas fa-list">
-                        {filteredClasses.length === 0 ? (
+                    {/* Liste des salles */}
+                    <Card title="Liste des salles" icon="fas fa-list">
+                        {classrooms.data.length === 0 ? (
                             <Alert type="info">
-                                {classes.data.length === 0
-                                    ? "Aucune classe n'a été créée pour le moment."
-                                    : "Aucune classe ne correspond aux critères de recherche."}
+                                Aucune salle ne correspond aux critères de
+                                recherche.
                             </Alert>
                         ) : (
                             <div className="table-responsive">
                                 <table className="table table-hover">
                                     <thead>
                                         <tr>
-                                            <th>Classe</th>
-                                            <th>Niveau</th>
-                                            <th>Année académique</th>
-                                            <th>Étudiants</th>
-                                            <th>Cours</th>
-                                            <th>Taux d'occupation</th>
+                                            <th>Salle</th>
+                                            <th>Bâtiment / Étage</th>
+                                            <th>Capacité</th>
+                                            <th>Équipements</th>
+                                            <th>Plannings</th>
+                                            <th>Statut</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredClasses.map((schoolClass) => (
-                                            <tr key={schoolClass.id}>
+                                        {classrooms.data.map((classroom) => (
+                                            <tr key={classroom.id}>
                                                 <td>
                                                     <div>
                                                         <strong>
-                                                            {schoolClass.name}
+                                                            {classroom.name}
                                                         </strong>
                                                         <br />
                                                         <small className="text-muted">
-                                                            {schoolClass.code}
+                                                            Code:{" "}
+                                                            {classroom.code}
                                                         </small>
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <span className="badge badge-info">
-                                                        {schoolClass.level}
-                                                    </span>
-                                                </td>
-                                                <td>
                                                     <div>
-                                                        {
-                                                            schoolClass
-                                                                .academic_year
-                                                                .name
-                                                        }
-                                                        {schoolClass
-                                                            .academic_year
-                                                            .is_active && (
-                                                            <span className="badge badge-success ml-1">
-                                                                Active
-                                                            </span>
+                                                        {classroom.building && (
+                                                            <>
+                                                                <i className="fas fa-building text-info mr-1"></i>
+                                                                {
+                                                                    classroom.building
+                                                                }
+                                                            </>
+                                                        )}
+                                                        {classroom.floor && (
+                                                            <div className="small text-muted">
+                                                                Étage:{" "}
+                                                                {
+                                                                    classroom.floor
+                                                                }
+                                                            </div>
                                                         )}
                                                     </div>
-                                                </td>
-                                                <td>
-                                                    <div className="d-flex align-items-center">
-                                                        <span className="mr-2">
-                                                            {
-                                                                schoolClass.students_count
-                                                            }
-                                                            /
-                                                            {
-                                                                schoolClass.capacity
-                                                            }
-                                                        </span>
-                                                        <div
-                                                            className="progress flex-grow-1"
-                                                            style={{
-                                                                height: "20px",
-                                                                minWidth:
-                                                                    "60px",
-                                                            }}
-                                                        >
-                                                            <div
-                                                                className={`progress-bar ${getProgressColor(
-                                                                    schoolClass.students_count,
-                                                                    schoolClass.capacity
-                                                                )}`}
-                                                                style={{
-                                                                    width: `${Math.min(
-                                                                        (schoolClass.students_count /
-                                                                            schoolClass.capacity) *
-                                                                            100,
-                                                                        100
-                                                                    )}%`,
-                                                                }}
-                                                            ></div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <span className="badge badge-primary">
-                                                        {
-                                                            schoolClass.courses_count
-                                                        }{" "}
-                                                        cours
-                                                    </span>
                                                 </td>
                                                 <td>
                                                     <span
-                                                        className={`badge ${
-                                                            (schoolClass.students_count /
-                                                                schoolClass.capacity) *
-                                                                100 >=
-                                                            90
-                                                                ? "badge-danger"
-                                                                : (schoolClass.students_count /
-                                                                      schoolClass.capacity) *
-                                                                      100 >=
-                                                                  75
-                                                                ? "badge-warning"
-                                                                : "badge-success"
-                                                        }`}
+                                                        className={`h5 ${getCapacityColor(
+                                                            classroom.capacity
+                                                        )}`}
                                                     >
-                                                        {Math.round(
-                                                            (schoolClass.students_count /
-                                                                schoolClass.capacity) *
-                                                                100
-                                                        )}
-                                                        %
+                                                        <i className="fas fa-users mr-1"></i>
+                                                        {classroom.capacity}
                                                     </span>
+                                                </td>
+                                                <td>
+                                                    {classroom.equipment &&
+                                                    classroom.equipment.length >
+                                                        0 ? (
+                                                        <div>
+                                                            {classroom.equipment
+                                                                .slice(0, 2)
+                                                                .map(
+                                                                    (
+                                                                        item,
+                                                                        index
+                                                                    ) => (
+                                                                        <span
+                                                                            key={
+                                                                                index
+                                                                            }
+                                                                            className="badge badge-light mr-1"
+                                                                        >
+                                                                            {
+                                                                                item
+                                                                            }
+                                                                        </span>
+                                                                    )
+                                                                )}
+                                                            {classroom.equipment
+                                                                .length > 2 && (
+                                                                <span className="badge badge-secondary">
+                                                                    +
+                                                                    {classroom
+                                                                        .equipment
+                                                                        .length -
+                                                                        2}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-muted">
+                                                            Aucun équipement
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    <span className="badge badge-info">
+                                                        {
+                                                            classroom.schedules_count
+                                                        }{" "}
+                                                        planning(s)
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {getAvailabilityBadge(
+                                                        classroom.is_available
+                                                    )}
                                                 </td>
                                                 <td>
                                                     <div className="btn-group btn-group-sm">
                                                         <Link
                                                             href={route(
-                                                                "academic.classes.show",
-                                                                schoolClass.id
+                                                                "academic.classrooms.show",
+                                                                classroom.id
                                                             )}
                                                             className="btn btn-info"
                                                             title="Voir les détails"
@@ -386,8 +396,8 @@ export default function Index({ classes, academicYears, auth }) {
                                                         </Link>
                                                         <Link
                                                             href={route(
-                                                                "academic.classes.edit",
-                                                                schoolClass.id
+                                                                "academic.classrooms.edit",
+                                                                classroom.id
                                                             )}
                                                             className="btn btn-warning"
                                                             title="Modifier"
@@ -400,12 +410,8 @@ export default function Index({ classes, academicYears, auth }) {
                                                             title="Supprimer"
                                                             onClick={() =>
                                                                 handleDelete(
-                                                                    schoolClass
+                                                                    classroom
                                                                 )
-                                                            }
-                                                            disabled={
-                                                                schoolClass.students_count >
-                                                                0
                                                             }
                                                         >
                                                             <i className="fas fa-trash"></i>
@@ -420,15 +426,16 @@ export default function Index({ classes, academicYears, auth }) {
                         )}
 
                         {/* Pagination */}
-                        {classes.last_page > 1 && (
+                        {classrooms.last_page > 1 && (
                             <div className="d-flex justify-content-between align-items-center mt-3">
                                 <div>
-                                    Affichage de {classes.from} à {classes.to}{" "}
-                                    sur {classes.total} résultats
+                                    Affichage de {classrooms.from} à{" "}
+                                    {classrooms.to} sur {classrooms.total}{" "}
+                                    résultats
                                 </div>
                                 <nav>
                                     <ul className="pagination pagination-sm mb-0">
-                                        {classes.links.map((link, index) => (
+                                        {classrooms.links.map((link, index) => (
                                             <li
                                                 key={index}
                                                 className={`page-item ${
@@ -486,23 +493,14 @@ export default function Index({ classes, academicYears, auth }) {
                             </div>
                             <div className="modal-body">
                                 <p>
-                                    Êtes-vous sûr de vouloir supprimer la classe{" "}
-                                    <strong>{classToDelete?.name}</strong> ?
+                                    Êtes-vous sûr de vouloir supprimer la salle{" "}
+                                    <strong>{classroomToDelete?.name}</strong> ?
                                 </p>
                                 <p className="text-muted">
                                     Cette action est irréversible. Tous les
                                     plannings associés seront également
                                     supprimés.
                                 </p>
-                                {classToDelete?.students_count > 0 && (
-                                    <Alert type="danger">
-                                        Cette classe contient{" "}
-                                        {classToDelete.students_count}{" "}
-                                        étudiant(s). Vous devez d'abord les
-                                        désinscrire avant de pouvoir supprimer
-                                        la classe.
-                                    </Alert>
-                                )}
                             </div>
                             <div className="modal-footer justify-content-between">
                                 <button
@@ -516,10 +514,7 @@ export default function Index({ classes, academicYears, auth }) {
                                     type="button"
                                     className="btn btn-danger"
                                     onClick={confirmDelete}
-                                    disabled={
-                                        processing ||
-                                        classToDelete?.students_count > 0
-                                    }
+                                    disabled={processing}
                                 >
                                     {processing ? (
                                         <>
@@ -540,12 +535,9 @@ export default function Index({ classes, academicYears, auth }) {
             )}
 
             <style>{`
-                .progress {
+                .small-box {
                     border-radius: 10px;
-                }
-                
-                .progress-bar {
-                    border-radius: 10px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                 }
                 
                 .table td {
@@ -556,9 +548,8 @@ export default function Index({ classes, academicYears, auth }) {
                     font-size: 0.75em;
                 }
                 
-                .small-box {
-                    border-radius: 10px;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                .gap-2 > * + * {
+                    margin-left: 0.5rem;
                 }
                 
                 .modal.show {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import AdminLayout from "@/Layouts/AdminLayout";
 import { Head, useForm, Link } from "@inertiajs/react";
-import { Card, FormField, Alert } from "@/Components/UI/ProfessionalComponents";
+import { Card, FormField, Alert } from "@/Components/UI/Composant";
 
 export default function Edit({
     course,

@@ -18,7 +18,7 @@ class SchoolClassController extends Controller
             ->orderBy('name')
             ->paginate(15);
 
-        return Inertia::render('Academic/Classes/Index', [
+        return Inertia::render('Scolarite/Classe/Index', [
             'classes' => $classes,
             'academicYears' => AcademicYear::all()
         ]);
@@ -26,15 +26,15 @@ class SchoolClassController extends Controller
 
     public function create()
     {
-        return Inertia::render('Academic/Classes/Create', [
+        return Inertia::render('Scolarite/Classe/Create', [
             'academicYears' => AcademicYear::all(),
+            'courses' => Course::all(),
             'levels' => [
                 'Licence 1',
                 'Licence 2',
                 'Licence 3',
                 'Master 1',
                 'Master 2',
-                'Doctorat'
             ]
         ]);
     }
@@ -66,7 +66,7 @@ class SchoolClassController extends Controller
             'schedules.teacher'
         ]);
 
-        return Inertia::render('Academic/Classes/Show', [
+        return Inertia::render('Scolarite/Classe/Show', [
             'class' => $class,
             'availableCourses' => Course::where('academic_year_id', $class->academic_year_id)
                 ->whereNotIn('id', $class->courses->pluck('id'))
@@ -76,7 +76,7 @@ class SchoolClassController extends Controller
 
     public function edit(SchoolClass $class)
     {
-        return Inertia::render('Academic/Classes/Edit', [
+        return Inertia::render('Scolarite/Classe/Edit', [
             'class' => $class,
             'academicYears' => AcademicYear::all(),
             'levels' => [

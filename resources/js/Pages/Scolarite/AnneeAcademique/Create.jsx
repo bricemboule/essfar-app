@@ -739,7 +739,7 @@ export default function Create() {
                 </div>
             </section>
 
-            <style jsx>{`
+            <style>{`
                 .description-block {
                     display: block;
                 }

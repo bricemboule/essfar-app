@@ -12,7 +12,30 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Middlewares appliqués à toutes les routes web
-         $middleware->group('academic', [
+        $middleware->web(append: [
+            \App\Http\Middleware\HandleInertiaRequests::class,
+            \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
+        ]);
+
+        // Déclaration de tous les alias
+        $middleware->alias([
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'permission' => \App\Http\Middleware\PermissionMiddleware::class,
+            'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
+        ]);
+
+        // Groupes de middlewares
+        $middleware->group('admin', [
+            'auth',
+            'role:admin',
+        ]);
+
+        $middleware->group('staff', [
+            'auth',
+            'role:chef_scolarite,gestionnaire_scolarite,directeur_academique,directeur_general,comptable,communication,admin',
+        ]);
+
+        $middleware->group('academic', [
             'auth',
             'role:chef_scolarite,directeur_academique,directeur_general,admin',
         ]);
@@ -21,19 +44,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth',
             'role:comptable,directeur_general,admin',
         ]);
-        $middleware->web(append: [
-            \App\Http\Middleware\HandleInertiaRequests::class,
-            \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
-        ]);
-
-        // Déclaration de l'alias pour les routes protégées par rôle
-        $middleware->alias([
-            'role' => \App\Http\Middleware\RoleMiddleware::class,
-            'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
-        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-            $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException $e, $request) {
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException $e, $request) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Accès refusé.'], 403);
             }
@@ -51,19 +64,3 @@ return Application::configure(basePath: dirname(__DIR__))
         });
     })
     ->create();
-
-     $middleware->alias([
-            'role' => \App\Http\Middleware\RolePermissionMiddleware::class,
-            'permission' => \App\Http\Middleware\PermissionMiddleware::class,
-        ]);
-
-        // Middleware de groupe
-        $middleware->group('admin', [
-            'auth',
-            'role:admin',
-        ]);
-
-        $middleware->group('staff', [
-            'auth',
-            'role:chef_scolarite,gestionnaire_scolarite,directeur_academique,directeur_general,comptable,communication,admin',
-        ]);

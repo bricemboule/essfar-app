@@ -823,7 +823,7 @@ export default function Edit({ academicYear }) {
                 </div>
             </section>
 
-            <style jsx>{`
+            <style>{`
                 .description-block {
                     display: block;
                 }

@@ -159,6 +159,8 @@ class HandleInertiaRequests extends Middleware
                 'children' => [
                     ['title' => 'Annees Academiques', 'url' => route('academic.years.index')],
                     ['title' => 'Classes', 'url' => route('academic.classes.index')],
+                    ['title' => 'Etudiants', 'url' => route('academic.classes.index')],
+                    ['title' => 'Enseignants', 'url' => route('academic.classes.index')],
                     ['title' => 'Cours', 'url' => route('academic.courses.index')],
                     ['title' => 'Inscriptions', 'url' => ""],
                 ]

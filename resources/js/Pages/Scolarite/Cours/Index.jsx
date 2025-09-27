@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import AdminLayout from "@/Layouts/AdminLayout";
 import { Head, Link, useForm, router } from "@inertiajs/react";
-import { Card, Alert } from "@/Components/UI/ProfessionalComponents";
+import { Card, Alert } from "@/Components/UI/Composant";
 
 export default function Index({ courses, academicYears, filters, auth }) {
     const [searchTerm, setSearchTerm] = useState(filters.search || "");
