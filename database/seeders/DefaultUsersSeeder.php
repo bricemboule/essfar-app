@@ -14,7 +14,7 @@ class DefaultUsersSeeder extends Seeder
         // Administrateur principal
         $admin = User::create([
             'name' => 'Administrateur Principal',
-            'email' => 'admin@essfar.edu',
+            'email' => 'admin@essfar.com',
             'password' => Hash::make('password'),
             'role' => 'admin',
             'telephone' => '+237 XXX XXX XXX',
@@ -26,7 +26,7 @@ class DefaultUsersSeeder extends Seeder
         // Directeur Général
         $dg = User::create([
             'name' => 'Directeur Général',
-            'email' => 'dg@essfar.edu',
+            'email' => 'patric.seumen@essfar.com',
             'password' => Hash::make('password'),
             'role' => 'directeur_general',
             'telephone' => '+237 XXX XXX XXX',
@@ -37,7 +37,7 @@ class DefaultUsersSeeder extends Seeder
         // Directeur Académique
         $da = User::create([
             'name' => 'Directeur Académique',
-            'email' => 'da@essfar.edu',
+            'email' => 'etienne.tsamo@essfar.com',
             'password' => Hash::make('password'),
             'role' => 'directeur_academique',
             'telephone' => '+237 XXX XXX XXX',
@@ -48,7 +48,7 @@ class DefaultUsersSeeder extends Seeder
         // Chef Scolarité
         $cs = User::create([
             'name' => 'Chef Scolarité',
-            'email' => 'chef.scolarite@essfar.edu',
+            'email' => 'donald.mbapou@essfar.com',
             'password' => Hash::make('password'),
             'role' => 'chef_scolarite',
             'telephone' => '+237 XXX XXX XXX',
@@ -59,7 +59,7 @@ class DefaultUsersSeeder extends Seeder
         // Gestionnaire Scolarité
         $gs = User::create([
             'name' => 'Gestionnaire Scolarité',
-            'email' => 'gestionnaire.scolarite@essfar.edu',
+            'email' => 'brice.mboule@essfar.com',
             'password' => Hash::make('password'),
             'role' => 'gestionnaire_scolarite',
             'telephone' => '+237 XXX XXX XXX',
@@ -70,7 +70,7 @@ class DefaultUsersSeeder extends Seeder
         // Comptable
         $comptable = User::create([
             'name' => 'Comptable Principal',
-            'email' => 'comptable@essfar.edu',
+            'email' => 'ulrich.wakeu@essfar.com',
             'password' => Hash::make('password'),
             'role' => 'comptable',
             'telephone' => '+237 XXX XXX XXX',
@@ -81,7 +81,7 @@ class DefaultUsersSeeder extends Seeder
         // Responsable Communication
         $com = User::create([
             'name' => 'Responsable Communication',
-            'email' => 'communication@essfar.edu',
+            'email' => 'myriam.makon@essfar.com',
             'password' => Hash::make('password'),
             'role' => 'communication',
             'telephone' => '+237 XXX XXX XXX',
@@ -91,11 +91,11 @@ class DefaultUsersSeeder extends Seeder
 
         // Enseignants de test
         $enseignants = [
-            'Dr. Martin Kouam' => 'martin.kouam@essfar.edu',
-            'Prof. Marie Tchinda' => 'marie.tchinda@essfar.edu',
-            'Dr. Paul Ngando' => 'paul.ngando@essfar.edu',
-            'Prof. Claire Mballa' => 'claire.mballa@essfar.edu',
-            'Dr. Jean Fouda' => 'jean.fouda@essfar.edu',
+            'Martin Kouam' => 'martin.kouam@essfar.edu',
+            'Marie Tchinda' => 'marie.tchinda@essfar.edu',
+            'Paul Ngando' => 'paul.ngando@essfar.edu',
+            'Claire Mballa' => 'claire.mballa@essfar.edu',
+            'Jean Fouda' => 'jean.fouda@essfar.edu',
         ];
 
         foreach ($enseignants as $name => $email) {

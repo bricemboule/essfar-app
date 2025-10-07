@@ -3,24 +3,11 @@ import AdminLayout from "@/Layouts/AdminLayout";
 import { Head, useForm, Link } from "@inertiajs/react";
 import { Card, FormField, Alert } from "@/Components/UI/Composant";
 
-export default function Edit({
-    class: schoolClass,
-    academicYears,
-    levels,
-    availableCourses,
-}) {
-    const [selectedCourses, setSelectedCourses] = useState(
-        schoolClass.courses ? schoolClass.courses.map((c) => c.id) : []
-    );
-    const [totalCredits, setTotalCredits] = useState(0);
-    const [totalHours, setTotalHours] = useState(0);
-    const [hasChanges, setHasChanges] = useState(false);
-
+export default function Edit({ class: schoolClass, academicYears, levels }) {
     // Tous les cours (actuels + disponibles)
-    const allCourses = [
-        ...(schoolClass.courses || []),
-        ...(availableCourses || []),
-    ];
+    const allCourses = [...(schoolClass.courses || [])];
+
+    const [hasChanges, setHasChanges] = useState("");
 
     const { data, setData, put, processing, errors, reset } = useForm({
         name: schoolClass.name || "",
@@ -29,11 +16,9 @@ export default function Edit({
         academic_year_id: schoolClass.academic_year_id || "",
         capacity: schoolClass.capacity || 50,
         description: schoolClass.description || "",
-        course_ids: selectedCourses,
         specialization: schoolClass.specialization || "",
         admission_requirements: schoolClass.admission_requirements || "",
         tuition_fee: schoolClass.tuition_fee || 0,
-        semester_duration: schoolClass.semester_duration || 6,
     });
 
     // Surveiller les changements
@@ -48,7 +33,6 @@ export default function Edit({
             specialization: schoolClass.specialization || "",
             admission_requirements: schoolClass.admission_requirements || "",
             tuition_fee: schoolClass.tuition_fee || 0,
-            semester_duration: schoolClass.semester_duration || 6,
         };
 
         const currentData = {
@@ -61,56 +45,16 @@ export default function Edit({
             specialization: data.specialization,
             admission_requirements: data.admission_requirements,
             tuition_fee: data.tuition_fee,
-            semester_duration: data.semester_duration,
         };
-
-        const originalCourses = schoolClass.courses
-            ? schoolClass.courses.map((c) => c.id).sort()
-            : [];
-        const currentCourses = [...selectedCourses].sort();
 
         const dataChanged =
             JSON.stringify(originalData) !== JSON.stringify(currentData);
-        const coursesChanged =
-            JSON.stringify(originalCourses) !== JSON.stringify(currentCourses);
 
-        setHasChanges(dataChanged || coursesChanged);
-    }, [data, selectedCourses, schoolClass]);
-
-    // Calculer totaux
-    useEffect(() => {
-        const selectedCoursesData = allCourses.filter((c) =>
-            selectedCourses.includes(c.id)
-        );
-        const credits = selectedCoursesData.reduce(
-            (sum, c) => sum + (c.credits || 0),
-            0
-        );
-        const hours = selectedCoursesData.reduce(
-            (sum, c) => sum + (c.total_hours || 0),
-            0
-        );
-
-        setTotalCredits(credits);
-        setTotalHours(hours);
-        setData("course_ids", selectedCourses);
-    }, [selectedCourses]);
-
-    const handleCourseToggle = (courseId) => {
-        const newCourses = selectedCourses.includes(courseId)
-            ? selectedCourses.filter((id) => id !== courseId)
-            : [...selectedCourses, courseId];
-
-        setSelectedCourses(newCourses);
-    };
+        setHasChanges(dataChanged);
+    }, [data, schoolClass]);
 
     const submit = (e) => {
         e.preventDefault();
-
-        if (selectedCourses.length === 0) {
-            alert("Veuillez sélectionner au moins un cours pour cette classe");
-            return;
-        }
 
         put(route("academic.classes.update", schoolClass.id));
     };
@@ -257,7 +201,7 @@ export default function Edit({
                                     </div>
 
                                     <div className="row">
-                                        <div className="col-md-4">
+                                        <div className="col-md-6">
                                             <FormField
                                                 label="Niveau d'étude"
                                                 name="level"
@@ -279,7 +223,7 @@ export default function Edit({
                                                 )}
                                             />
                                         </div>
-                                        <div className="col-md-4">
+                                        <div className="col-md-6">
                                             <FormField
                                                 label="Spécialisation"
                                                 name="specialization"
@@ -296,7 +240,10 @@ export default function Edit({
                                                 placeholder="Ex: Informatique, Mathématiques..."
                                             />
                                         </div>
-                                        <div className="col-md-4">
+                                    </div>
+
+                                    <div className="row">
+                                        <div className="col-md-6">
                                             <FormField
                                                 label="Capacité maximale"
                                                 name="capacity"
@@ -322,9 +269,6 @@ export default function Edit({
                                                 }
                                             />
                                         </div>
-                                    </div>
-
-                                    <div className="row">
                                         <div className="col-md-6">
                                             <FormField
                                                 label="Année académique"
@@ -355,27 +299,6 @@ export default function Edit({
                                                         ? "Ne peut pas être modifiée (étudiants inscrits)"
                                                         : "Année académique de la classe"
                                                 }
-                                            />
-                                        </div>
-                                        <div className="col-md-6">
-                                            <FormField
-                                                label="Durée du semestre (mois)"
-                                                name="semester_duration"
-                                                type="number"
-                                                value={data.semester_duration}
-                                                onChange={(e) =>
-                                                    setData(
-                                                        "semester_duration",
-                                                        parseInt(
-                                                            e.target.value
-                                                        ) || 0
-                                                    )
-                                                }
-                                                error={errors.semester_duration}
-                                                required
-                                                icon="fas fa-calendar"
-                                                min="1"
-                                                max="12"
                                             />
                                         </div>
                                     </div>
@@ -441,181 +364,6 @@ export default function Edit({
                                         </div>
                                     </div>
                                 </form>
-                            </Card>
-
-                            {/* Sélection des cours */}
-                            <Card
-                                title="Programme des cours"
-                                icon="fas fa-book"
-                                className="mt-4"
-                            >
-                                {allCourses.length === 0 ? (
-                                    <Alert type="warning">
-                                        Aucun cours disponible pour cette année
-                                        académique.
-                                        <Link
-                                            href={route(
-                                                "academic.courses.create"
-                                            )}
-                                            className="alert-link ml-1"
-                                        >
-                                            Créer un cours
-                                        </Link>
-                                    </Alert>
-                                ) : (
-                                    <div>
-                                        <div className="row mb-3">
-                                            <div className="col-md-12">
-                                                <div className="d-flex justify-content-between align-items-center">
-                                                    <h6 className="mb-0">
-                                                        Cours assignés (
-                                                        {selectedCourses.length}{" "}
-                                                        / {allCourses.length})
-                                                    </h6>
-                                                    <div className="btn-group btn-group-sm">
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-outline-primary"
-                                                            onClick={() =>
-                                                                setSelectedCourses(
-                                                                    allCourses.map(
-                                                                        (c) =>
-                                                                            c.id
-                                                                    )
-                                                                )
-                                                            }
-                                                        >
-                                                            Tout sélectionner
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-outline-secondary"
-                                                            onClick={() =>
-                                                                setSelectedCourses(
-                                                                    []
-                                                                )
-                                                            }
-                                                        >
-                                                            Tout déselectionner
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="row">
-                                            {allCourses.map((course) => {
-                                                const isCurrentCourse =
-                                                    schoolClass.courses?.some(
-                                                        (c) =>
-                                                            c.id === course.id
-                                                    );
-                                                const isSelected =
-                                                    selectedCourses.includes(
-                                                        course.id
-                                                    );
-
-                                                return (
-                                                    <div
-                                                        key={course.id}
-                                                        className="col-md-6 mb-3"
-                                                    >
-                                                        <div
-                                                            className={`card cursor-pointer position-relative ${
-                                                                isSelected
-                                                                    ? "card-success card-outline"
-                                                                    : "card-outline"
-                                                            }`}
-                                                            onClick={() =>
-                                                                handleCourseToggle(
-                                                                    course.id
-                                                                )
-                                                            }
-                                                        >
-                                                            {isCurrentCourse && (
-                                                                <span
-                                                                    className="badge badge-info position-absolute"
-                                                                    style={{
-                                                                        top: "5px",
-                                                                        right: "5px",
-                                                                        zIndex: 10,
-                                                                    }}
-                                                                >
-                                                                    Actuel
-                                                                </span>
-                                                            )}
-                                                            <div className="card-body p-3">
-                                                                <div className="d-flex align-items-start">
-                                                                    <div className="custom-control custom-checkbox mr-3">
-                                                                        <input
-                                                                            type="checkbox"
-                                                                            className="custom-control-input"
-                                                                            id={`course-${course.id}`}
-                                                                            checked={
-                                                                                isSelected
-                                                                            }
-                                                                            onChange={() => {}}
-                                                                        />
-                                                                        <label
-                                                                            className="custom-control-label"
-                                                                            htmlFor={`course-${course.id}`}
-                                                                        ></label>
-                                                                    </div>
-                                                                    <div className="flex-grow-1">
-                                                                        <h6 className="mb-1">
-                                                                            {
-                                                                                course.name
-                                                                            }
-                                                                        </h6>
-                                                                        <p className="text-muted mb-1 small">
-                                                                            {
-                                                                                course.code
-                                                                            }
-                                                                        </p>
-                                                                        <div className="d-flex justify-content-between">
-                                                                            <small className="text-info">
-                                                                                <i className="fas fa-medal mr-1"></i>
-                                                                                {course.credits ||
-                                                                                    0}{" "}
-                                                                                crédits
-                                                                            </small>
-                                                                            <small className="text-primary">
-                                                                                <i className="fas fa-clock mr-1"></i>
-                                                                                {course.total_hours ||
-                                                                                    0}
-
-                                                                                h
-                                                                            </small>
-                                                                        </div>
-                                                                        {course.description && (
-                                                                            <p className="text-muted small mt-1 mb-0">
-                                                                                {course
-                                                                                    .description
-                                                                                    .length >
-                                                                                60
-                                                                                    ? course.description.substring(
-                                                                                          0,
-                                                                                          60
-                                                                                      ) +
-                                                                                      "..."
-                                                                                    : course.description}
-                                                                            </p>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                )}
-                                {errors.course_ids && (
-                                    <div className="text-danger small">
-                                        {errors.course_ids}
-                                    </div>
-                                )}
                             </Card>
 
                             {/* Boutons d'action */}
@@ -741,24 +489,6 @@ export default function Edit({
 
                                 <hr />
 
-                                <div className="text-center mb-3">
-                                    <h6>Programme mis à jour</h6>
-                                    <div className="row">
-                                        <div className="col-6">
-                                            <h4 className="text-success">
-                                                {totalCredits}
-                                            </h4>
-                                            <small>Crédits totaux</small>
-                                        </div>
-                                        <div className="col-6">
-                                            <h4 className="text-primary">
-                                                {totalHours}h
-                                            </h4>
-                                            <small>Volume horaire</small>
-                                        </div>
-                                    </div>
-                                </div>
-
                                 {data.tuition_fee > 0 && (
                                     <>
                                         <hr />
@@ -782,14 +512,6 @@ export default function Edit({
                                     <p>
                                         <strong>Spécialisation :</strong>{" "}
                                         {data.specialization || "Non définie"}
-                                    </p>
-                                    <p>
-                                        <strong>Durée :</strong>{" "}
-                                        {data.semester_duration} mois
-                                    </p>
-                                    <p>
-                                        <strong>Cours sélectionnés :</strong>{" "}
-                                        {selectedCourses.length}
                                     </p>
 
                                     {hasChanges && (
@@ -833,32 +555,6 @@ export default function Edit({
                                                             <small className="font-weight-bold">
                                                                 {course.name}
                                                             </small>
-                                                            <br />
-                                                            <small
-                                                                className={
-                                                                    selectedCourses.includes(
-                                                                        course.id
-                                                                    )
-                                                                        ? "text-light"
-                                                                        : "text-muted"
-                                                                }
-                                                            >
-                                                                {course.credits ||
-                                                                    0}{" "}
-                                                                crédits •{" "}
-                                                                {course.total_hours ||
-                                                                    0}
-                                                                h
-                                                            </small>
-                                                        </div>
-                                                        <div>
-                                                            {selectedCourses.includes(
-                                                                course.id
-                                                            ) ? (
-                                                                <i className="fas fa-check-circle text-white"></i>
-                                                            ) : (
-                                                                <i className="fas fa-times-circle text-danger"></i>
-                                                            )}
                                                         </div>
                                                     </div>
                                                 )
@@ -883,16 +579,7 @@ export default function Edit({
                                         <i className="fas fa-eye mr-1"></i>
                                         Voir les détails
                                     </Link>
-                                    <Link
-                                        href={route(
-                                            "academic.schedules.index",
-                                            { class_id: schoolClass.id }
-                                        )}
-                                        className="btn btn-outline-primary btn-sm"
-                                    >
-                                        <i className="fas fa-calendar mr-1"></i>
-                                        Emploi du temps
-                                    </Link>
+
                                     {currentStudents > 0 && (
                                         <Link
                                             href={route("students.index", {

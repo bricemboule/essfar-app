@@ -23,7 +23,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('course_id')->constrained()->onDelete('cascade');
             $table->foreignId('teacher_id')->constrained('users')->onDelete('cascade');
-            $table->decimal('hourly_rate_override', 8, 2)->nullable(); // Tarif spécifique pour ce prof
+            $table->foreignId('academic_year_id')->constrained()->onDelete('cascade');
+             $table->decimal('taux_horaire', 8, 2)->nullable(); // Tarif spécifique pour ce prof
+            $table->date('assigned_at')->nullable();
+           
             $table->timestamps();
 
             $table->unique(['course_id', 'teacher_id']);

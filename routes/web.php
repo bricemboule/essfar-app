@@ -11,6 +11,8 @@ use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\EtudiantController;
+use App\Http\Controllers\EnseignantController;
 use App\Http\Controllers\SchoolClassController;
 use App\Http\Controllers\StudentEnrollmentController;
 use App\Http\Controllers\Site\EtudeEssfarController;
@@ -265,6 +267,9 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['permission:manage_academic'])->prefix('academic')->name('academic.')->group(function () {
         Route::resource('years', AcademicYearController::class);
         Route::resource('classes', SchoolClassController::class);
+        Route::get('/etudiants/export', [EtudiantController::class, 'export'])->name('etudiants.export');
+        Route::resource('etudiants', EtudiantController::class);
+        Route::resource('enseignants', EnseignantController::class);
         Route::resource('courses', CourseController::class);
         Route::resource('classrooms', ClassroomController::class);
        

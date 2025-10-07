@@ -15,11 +15,9 @@ export default function Create({ academicYears, courses, levels }) {
         academic_year_id: academicYears.find((y) => y.is_active)?.id || "",
         capacity: 50,
         description: "",
-        course_ids: [],
         specialization: "",
         admission_requirements: "",
         tuition_fee: 0,
-        semester_duration: 6,
     });
     console.log(courses);
     // Générer automatiquement le code de la classe
@@ -32,25 +30,6 @@ export default function Create({ academicYears, courses, levels }) {
         }
     }, [data.level, data.specialization]);
 
-    // Calculer totaux
-    useEffect(() => {
-        const selectedCoursesData = courses.filter((c) =>
-            selectedCourses.includes(c.id)
-        );
-        const credits = selectedCoursesData.reduce(
-            (sum, c) => sum + c.credits,
-            0
-        );
-        const hours = selectedCoursesData.reduce(
-            (sum, c) => sum + c.total_hours,
-            0
-        );
-
-        setTotalCredits(credits);
-        setTotalHours(hours);
-        setData("course_ids", selectedCourses);
-    }, [selectedCourses]);
-
     const handleCourseToggle = (courseId) => {
         const newCourses = selectedCourses.includes(courseId)
             ? selectedCourses.filter((id) => id !== courseId)
@@ -61,11 +40,6 @@ export default function Create({ academicYears, courses, levels }) {
 
     const submit = (e) => {
         e.preventDefault();
-
-        if (selectedCourses.length === 0) {
-            alert("Veuillez sélectionner au moins un cours pour cette classe");
-            return;
-        }
 
         post(route("academic.classes.store"));
     };
@@ -163,7 +137,7 @@ export default function Create({ academicYears, courses, levels }) {
                                     </div>
 
                                     <div className="row">
-                                        <div className="col-md-4">
+                                        <div className="col-md-6">
                                             <FormField
                                                 label="Niveau d'étude"
                                                 name="level"
@@ -185,7 +159,7 @@ export default function Create({ academicYears, courses, levels }) {
                                                 )}
                                             />
                                         </div>
-                                        <div className="col-md-4">
+                                        <div className="col-md-6">
                                             <FormField
                                                 label="Spécialisation"
                                                 name="specialization"
@@ -203,7 +177,10 @@ export default function Create({ academicYears, courses, levels }) {
                                                 placeholder="Ex: Informatique, Mathématiques..."
                                             />
                                         </div>
-                                        <div className="col-md-4">
+                                    </div>
+
+                                    <div className="row">
+                                        <div className="col-md-6">
                                             <FormField
                                                 label="Capacité maximale"
                                                 name="capacity"
@@ -224,9 +201,6 @@ export default function Create({ academicYears, courses, levels }) {
                                                 max="200"
                                             />
                                         </div>
-                                    </div>
-
-                                    <div className="row">
                                         <div className="col-md-6">
                                             <FormField
                                                 label="Année académique"
@@ -251,27 +225,6 @@ export default function Create({ academicYears, courses, levels }) {
                                                         }`,
                                                     })
                                                 )}
-                                            />
-                                        </div>
-                                        <div className="col-md-6">
-                                            <FormField
-                                                label="Durée du semestre (mois)"
-                                                name="semester_duration"
-                                                type="number"
-                                                value={data.semester_duration}
-                                                onChange={(e) =>
-                                                    setData(
-                                                        "semester_duration",
-                                                        parseInt(
-                                                            e.target.value
-                                                        ) || 0
-                                                    )
-                                                }
-                                                error={errors.semester_duration}
-                                                required
-                                                icon="fas fa-calendar"
-                                                min="1"
-                                                max="12"
                                             />
                                         </div>
                                     </div>
@@ -339,146 +292,6 @@ export default function Create({ academicYears, courses, levels }) {
                                 </div>
                             </Card>
 
-                            {/* Sélection des cours */}
-                            <Card
-                                title="Programme des cours"
-                                icon="fas fa-book"
-                                className="mt-4"
-                            >
-                                {courses.length === 0 ? (
-                                    <Alert type="warning">
-                                        Aucun cours disponible pour cette année
-                                        académique.
-                                        <Link
-                                            href={route(
-                                                "academic.courses.create"
-                                            )}
-                                            className="alert-link ml-1"
-                                        >
-                                            Créer un cours
-                                        </Link>
-                                    </Alert>
-                                ) : (
-                                    <div>
-                                        <div className="row mb-3">
-                                            <div className="col-md-12">
-                                                <div className="d-flex justify-content-between align-items-center">
-                                                    <h6 className="mb-0">
-                                                        Sélectionner les cours (
-                                                        {selectedCourses.length}{" "}
-                                                        sélectionné(s))
-                                                    </h6>
-                                                    <div className="btn-group btn-group-sm">
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-outline-primary"
-                                                            onClick={() =>
-                                                                setSelectedCourses(
-                                                                    courses.map(
-                                                                        (c) =>
-                                                                            c.id
-                                                                    )
-                                                                )
-                                                            }
-                                                        >
-                                                            Tout sélectionner
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-outline-secondary"
-                                                            onClick={() =>
-                                                                setSelectedCourses(
-                                                                    []
-                                                                )
-                                                            }
-                                                        >
-                                                            Tout déselectionner
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="row">
-                                            {courses.map((course) => (
-                                                <div
-                                                    key={course.id}
-                                                    className="col-md-6 mb-3"
-                                                >
-                                                    <div
-                                                        className={`card cursor-pointer ${
-                                                            selectedCourses.includes(
-                                                                course.id
-                                                            )
-                                                                ? "card-success card-outline"
-                                                                : "card-outline"
-                                                        }`}
-                                                        onClick={() =>
-                                                            handleCourseToggle(
-                                                                course.id
-                                                            )
-                                                        }
-                                                    >
-                                                        <div className="card-body p-3">
-                                                            <div className="d-flex align-items-start">
-                                                                <div className="custom-control custom-checkbox mr-3">
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        className="custom-control-input"
-                                                                        id={`course-${course.id}`}
-                                                                        checked={selectedCourses.includes(
-                                                                            course.id
-                                                                        )}
-                                                                        onChange={() => {}}
-                                                                    />
-                                                                    <label
-                                                                        className="custom-control-label"
-                                                                        htmlFor={`course-${course.id}`}
-                                                                    ></label>
-                                                                </div>
-                                                                <div className="flex-grow-1">
-                                                                    <h6 className="mb-1">
-                                                                        {
-                                                                            course.name
-                                                                        }
-                                                                    </h6>
-                                                                    <p className="text-muted mb-1 small">
-                                                                        {
-                                                                            course.code
-                                                                        }
-                                                                    </p>
-                                                                    <div className="d-flex justify-content-between">
-                                                                        <small className="text-info">
-                                                                            <i className="fas fa-medal mr-1"></i>
-                                                                            {
-                                                                                course.credits
-                                                                            }{" "}
-                                                                            crédits
-                                                                        </small>
-                                                                        <small className="text-primary">
-                                                                            <i className="fas fa-clock mr-1"></i>
-                                                                            {
-                                                                                course.total_hours
-                                                                            }
-                                                                            h
-                                                                        </small>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                                {errors.course_ids && (
-                                    <div className="text-danger small">
-                                        {errors.course_ids}
-                                    </div>
-                                )}
-                            </Card>
-
                             {/* Boutons d'action */}
                             <div className="d-flex justify-content-between mt-4">
                                 <Link
@@ -539,37 +352,9 @@ export default function Create({ academicYears, courses, levels }) {
                                             </span>
                                         </div>
                                     </div>
-                                    <div className="col-6">
-                                        <div className="description-block">
-                                            <h5 className="description-header text-warning">
-                                                {data.semester_duration}
-                                            </h5>
-                                            <span className="description-text">
-                                                MOIS
-                                            </span>
-                                        </div>
-                                    </div>
                                 </div>
 
                                 <hr />
-
-                                <div className="text-center mb-3">
-                                    <h6>Programme académique</h6>
-                                    <div className="row">
-                                        <div className="col-6">
-                                            <h4 className="text-success">
-                                                {totalCredits}
-                                            </h4>
-                                            <small>Crédits totaux</small>
-                                        </div>
-                                        <div className="col-6">
-                                            <h4 className="text-primary">
-                                                {totalHours}h
-                                            </h4>
-                                            <small>Volume horaire</small>
-                                        </div>
-                                    </div>
-                                </div>
 
                                 {data.tuition_fee > 0 && (
                                     <>
@@ -589,50 +374,6 @@ export default function Create({ academicYears, courses, levels }) {
                                 )}
 
                                 <hr />
-
-                                <div>
-                                    <p>
-                                        <strong>Cours sélectionnés :</strong>{" "}
-                                        {selectedCourses.length}
-                                    </p>
-                                    <p>
-                                        <strong>Spécialisation :</strong>{" "}
-                                        {data.specialization || "Non définie"}
-                                    </p>
-                                    {selectedCourses.length > 0 && (
-                                        <div className="mt-2">
-                                            <small className="text-muted">
-                                                Cours inclus :
-                                            </small>
-                                            <ul className="list-unstyled mt-1">
-                                                {courses
-                                                    .filter((c) =>
-                                                        selectedCourses.includes(
-                                                            c.id
-                                                        )
-                                                    )
-                                                    .slice(0, 3)
-                                                    .map((course) => (
-                                                        <li
-                                                            key={course.id}
-                                                            className="small"
-                                                        >
-                                                            <i className="fas fa-check text-success mr-1"></i>
-                                                            {course.name}
-                                                        </li>
-                                                    ))}
-                                                {selectedCourses.length > 3 && (
-                                                    <li className="small text-muted">
-                                                        ... et{" "}
-                                                        {selectedCourses.length -
-                                                            3}{" "}
-                                                        autre(s)
-                                                    </li>
-                                                )}
-                                            </ul>
-                                        </div>
-                                    )}
-                                </div>
                             </Card>
 
                             <Card
@@ -657,13 +398,6 @@ export default function Create({ academicYears, courses, levels }) {
                                             <small>
                                                 Capacité, durée et frais
                                             </small>
-                                        </div>
-                                    </div>
-                                    <div className="timeline-item">
-                                        <div className="timeline-marker bg-primary"></div>
-                                        <div className="timeline-content">
-                                            <h6>Programme</h6>
-                                            <small>Sélection des cours</small>
                                         </div>
                                     </div>
                                 </div>

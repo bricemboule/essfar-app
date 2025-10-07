@@ -39,7 +39,8 @@ class Course extends Model
 
     public function teachers()
     {
-        return $this->belongsToMany(User::class, 'course_teachers', 'course_id', 'teacher_id');
+        return $this->belongsToMany(User::class, 'course_teachers', 'course_id', 'teacher_id')
+                                ->withPivot('academic_year_id', 'assigned_at');
     }
 
     public function schedules()

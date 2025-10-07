@@ -1,5 +1,4 @@
 <?php
-// app/Http/Controllers/SchoolClassController.php
 
 namespace App\Http\Controllers;
 
@@ -85,7 +84,6 @@ class SchoolClassController extends Controller
                 'Licence 3',
                 'Master 1',
                 'Master 2',
-                'Doctorat'
             ]
         ]);
     }

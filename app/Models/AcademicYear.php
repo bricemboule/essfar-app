@@ -44,6 +44,11 @@ class AcademicYear extends Model
         return $this->hasMany(StudentEnrollment::class);
     }
 
+    public function courseTeachers()
+{
+    return $this->hasMany(CourseTeacher::class);
+}
+
     // Scopes
     public function scopeActive($query)
     {
