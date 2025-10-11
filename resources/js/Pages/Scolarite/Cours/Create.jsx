@@ -7,43 +7,24 @@ export default function CreateCourse({ academicYears, teachers, classes }) {
     const [selectedTeachers, setSelectedTeachers] = useState([]);
     const [selectedClasses, setSelectedClasses] = useState([]);
     const [totalCost, setTotalCost] = useState(0);
-
+    console.log(teachers);
     const { data, setData, post, processing, errors, reset } = useForm({
         name: "",
         code: "",
         description: "",
         credits: 3,
         total_hours: 30,
-        hourly_rate: 25000,
+        taux_horaire: 10000,
         academic_year_id: academicYears.find((y) => y.is_active)?.id || "",
         teacher_ids: [],
         class_ids: [],
-        objectives: "",
-        prerequisites: "",
-        evaluation_method: "",
-        resources: "",
     });
 
     // Calculer le coût total
     useEffect(() => {
-        const cost = (data.total_hours || 0) * (data.hourly_rate || 0);
+        const cost = (data.total_hours || 0) * (data.taux_horaire || 0);
         setTotalCost(cost);
-    }, [data.total_hours, data.hourly_rate]);
-
-    // Générer automatiquement le code du cours
-    useEffect(() => {
-        if (data.name && !data.code) {
-            const words = data.name
-                .split(" ")
-                .filter((word) => word.length > 2);
-            const code = words
-                .slice(0, 3)
-                .map((word) => word.substring(0, 3).toUpperCase())
-                .join("");
-            const number = Math.floor(Math.random() * 900) + 100;
-            setData("code", `${code}-${number}`);
-        }
-    }, [data.name]);
+    }, [data.total_hours, data.taux_horaire]);
 
     const handleTeacherToggle = (teacherId) => {
         const newTeachers = selectedTeachers.includes(teacherId)
@@ -132,7 +113,7 @@ export default function CreateCourse({ academicYears, teachers, classes }) {
                             >
                                 <div onSubmit={submit}>
                                     <div className="row">
-                                        <div className="col-md-8">
+                                        <div className="col-md-6">
                                             <FormField
                                                 label="Nom du cours"
                                                 name="name"
@@ -150,7 +131,7 @@ export default function CreateCourse({ academicYears, teachers, classes }) {
                                                 placeholder="Ex: Programmation Orientée Objet"
                                             />
                                         </div>
-                                        <div className="col-md-4">
+                                        <div className="col-md-6">
                                             <FormField
                                                 label="Code du cours"
                                                 name="code"
@@ -165,14 +146,13 @@ export default function CreateCourse({ academicYears, teachers, classes }) {
                                                 error={errors.code}
                                                 required
                                                 icon="fas fa-barcode"
-                                                placeholder="AUTO-GÉNÉRÉ"
-                                                helpText="Généré automatiquement"
+                                                placeholder=""
                                             />
                                         </div>
                                     </div>
 
                                     <div className="row">
-                                        <div className="col-md-4">
+                                        <div className="col-md-6">
                                             <FormField
                                                 label="Nombre de crédits"
                                                 name="credits"
@@ -193,7 +173,7 @@ export default function CreateCourse({ academicYears, teachers, classes }) {
                                                 max="10"
                                             />
                                         </div>
-                                        <div className="col-md-4">
+                                        <div className="col-md-6">
                                             <FormField
                                                 label="Total d'heures"
                                                 name="total_hours"
@@ -212,27 +192,6 @@ export default function CreateCourse({ academicYears, teachers, classes }) {
                                                 icon="fas fa-clock"
                                                 min="1"
                                                 max="200"
-                                            />
-                                        </div>
-                                        <div className="col-md-4">
-                                            <FormField
-                                                label="Tarif horaire (XAF)"
-                                                name="hourly_rate"
-                                                type="number"
-                                                value={data.hourly_rate}
-                                                onChange={(e) =>
-                                                    setData(
-                                                        "hourly_rate",
-                                                        parseFloat(
-                                                            e.target.value
-                                                        ) || 0
-                                                    )
-                                                }
-                                                error={errors.hourly_rate}
-                                                required
-                                                icon="fas fa-money-bill"
-                                                min="0"
-                                                step="1000"
                                             />
                                         </div>
                                     </div>
@@ -257,96 +216,6 @@ export default function CreateCourse({ academicYears, teachers, classes }) {
                                             }`,
                                         }))}
                                     />
-
-                                    <FormField
-                                        label="Description du cours"
-                                        name="description"
-                                        type="textarea"
-                                        value={data.description}
-                                        onChange={(e) =>
-                                            setData(
-                                                "description",
-                                                e.target.value
-                                            )
-                                        }
-                                        error={errors.description}
-                                        rows={4}
-                                        placeholder="Description détaillée du contenu du cours..."
-                                    />
-
-                                    <div className="row">
-                                        <div className="col-md-6">
-                                            <FormField
-                                                label="Objectifs pédagogiques"
-                                                name="objectives"
-                                                type="textarea"
-                                                value={data.objectives}
-                                                onChange={(e) =>
-                                                    setData(
-                                                        "objectives",
-                                                        e.target.value
-                                                    )
-                                                }
-                                                error={errors.objectives}
-                                                rows={3}
-                                                placeholder="Objectifs que les étudiants atteindront..."
-                                            />
-                                        </div>
-                                        <div className="col-md-6">
-                                            <FormField
-                                                label="Prérequis"
-                                                name="prerequisites"
-                                                type="textarea"
-                                                value={data.prerequisites}
-                                                onChange={(e) =>
-                                                    setData(
-                                                        "prerequisites",
-                                                        e.target.value
-                                                    )
-                                                }
-                                                error={errors.prerequisites}
-                                                rows={3}
-                                                placeholder="Connaissances requises avant ce cours..."
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="row">
-                                        <div className="col-md-6">
-                                            <FormField
-                                                label="Méthode d'évaluation"
-                                                name="evaluation_method"
-                                                type="textarea"
-                                                value={data.evaluation_method}
-                                                onChange={(e) =>
-                                                    setData(
-                                                        "evaluation_method",
-                                                        e.target.value
-                                                    )
-                                                }
-                                                error={errors.evaluation_method}
-                                                rows={3}
-                                                placeholder="Comment les étudiants seront évalués..."
-                                            />
-                                        </div>
-                                        <div className="col-md-6">
-                                            <FormField
-                                                label="Ressources nécessaires"
-                                                name="resources"
-                                                type="textarea"
-                                                value={data.resources}
-                                                onChange={(e) =>
-                                                    setData(
-                                                        "resources",
-                                                        e.target.value
-                                                    )
-                                                }
-                                                error={errors.resources}
-                                                rows={3}
-                                                placeholder="Matériel, logiciels, livres requis..."
-                                            />
-                                        </div>
-                                    </div>
                                 </div>
                             </Card>
 
@@ -360,7 +229,9 @@ export default function CreateCourse({ academicYears, teachers, classes }) {
                                     <Alert type="warning">
                                         Aucun enseignant disponible.
                                         <Link
-                                            href={route("admin.users.create")}
+                                            href={route(
+                                                "academic.enseignants.create"
+                                            )}
                                             className="alert-link ml-1"
                                         >
                                             Créer un enseignant
@@ -428,6 +299,25 @@ export default function CreateCourse({ academicYears, teachers, classes }) {
                                         {errors.teacher_ids}
                                     </div>
                                 )}
+                                <div className="col-md-8">
+                                    <FormField
+                                        label="Tarif horaire (XAF)"
+                                        name="taux_horaire"
+                                        type="number"
+                                        value={data.taux_horaire}
+                                        onChange={(e) =>
+                                            setData(
+                                                "taux_horaire",
+                                                parseFloat(e.target.value) || 0
+                                            )
+                                        }
+                                        error={errors.taux_horaire}
+                                        required
+                                        icon="fas fa-money-bill"
+                                        min="0"
+                                        step="1000"
+                                    />
+                                </div>
                             </Card>
 
                             {/* Assignation des classes */}
@@ -595,7 +485,7 @@ export default function CreateCourse({ academicYears, teachers, classes }) {
                                     </h4>
                                     <small className="text-muted">
                                         {data.total_hours}h ×{" "}
-                                        {formatCurrency(data.hourly_rate)}/h
+                                        {formatCurrency(data.taux_horaire)}/h
                                     </small>
                                 </div>
 

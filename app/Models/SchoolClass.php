@@ -34,9 +34,12 @@ class SchoolClass extends Model
     }
 
     public function courses()
-    {
-        return $this->belongsToMany(Course::class, 'class_courses');
-    }
+{
+    return $this->belongsToMany(Course::class, 'class_courses')
+        ->withPivot('academic_year_id', 'teacher_id')
+        ->withTimestamps();
+}
+
 
     public function schedules()
     {

@@ -20,6 +20,8 @@ return new class extends Migration
             $table->datetime('end_time');
             $table->tinyInteger('day_of_week'); // 1=Lundi, 7=Dimanche
             $table->integer('week_number'); // Semaine de l'année
+            $table->decimal('completed_hours', 5, 2)->nullable();
+            $table->text('completion_notes')->nullable();
             $table->enum('status', ['scheduled', 'completed', 'cancelled', 'rescheduled'])->default('scheduled');
             $table->text('notes')->nullable();
             $table->boolean('is_recurring')->default(false); // Cours récurrent

@@ -12,11 +12,13 @@ class SchoolClassController extends Controller
 {
     public function index()
     {
+
         $classes = SchoolClass::with(['academicYear'])
             ->withCount(['students', 'courses', 'schedules'])
             ->orderBy('name')
             ->paginate(15);
 
+            
         return Inertia::render('Scolarite/Classe/Index', [
             'classes' => $classes,
             'academicYears' => AcademicYear::all()

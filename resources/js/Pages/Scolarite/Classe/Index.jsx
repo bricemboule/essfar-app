@@ -4,6 +4,7 @@ import { Head, Link, useForm, router } from "@inertiajs/react";
 import { Card, Alert } from "@/Components/UI/Composant";
 
 export default function Index({ classes, academicYears, auth }) {
+    console.log(classes);
     const [searchTerm, setSearchTerm] = useState("");
     const [filterYear, setFilterYear] = useState("");
     const [filterLevel, setFilterLevel] = useState("");

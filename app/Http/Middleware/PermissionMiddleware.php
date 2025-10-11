@@ -62,6 +62,7 @@ class PermissionMiddleware
             ],
             'view_financial_reports' => [
                 'comptable',
+                'chef_scolarite',
                 'directeur_general',
                 'admin'
             ],

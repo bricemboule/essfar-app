@@ -405,21 +405,18 @@ export default function Show({
                                                         <tbody>
                                                             <tr>
                                                                 <th>
-                                                                    Qualification
+                                                                    Specialité
                                                                 </th>
                                                                 <td>
-                                                                    {teacher.qualification ||
+                                                                    {teacher.specialite ||
                                                                         "Non renseignée"}
                                                                 </td>
                                                             </tr>
                                                             <tr>
-                                                                <th>
-                                                                    Expérience
-                                                                </th>
+                                                                <th>Grade</th>
                                                                 <td>
-                                                                    {teacher.experience_years ||
-                                                                        0}{" "}
-                                                                    ans
+                                                                    {teacher.grade ||
+                                                                        "Non renseignée"}
                                                                 </td>
                                                             </tr>
                                                             <tr>
@@ -746,6 +743,7 @@ export default function Show({
                                                                                     {
                                                                                         currentContract.total_hours
                                                                                     }
+
                                                                                     h
                                                                                 </td>
                                                                             </tr>

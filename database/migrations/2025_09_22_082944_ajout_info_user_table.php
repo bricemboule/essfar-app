@@ -33,18 +33,13 @@ return new class extends Migration
             $table->string('photo')->nullable()->after('sexe');
             $table->string('specialite')->nullable()->after('photo');
             $table->string('grade')->nullable()->after('specialite');
-            $table->string('date_embauche')->nullable()->after('grade');
-            $table->string('type_contrat')->nullable()->after('date_embauche');
-            $table->string('salaire_mensuel')->nullable()->after('type_contrat');
-            $table->string('contract_start_date')->nullable()->after('salaire_mensuel');
-            $table->string('contract_end_date')->nullable()->after('contract_start_date');
-            $table -> string('parent_name')->nullable()->after('photo');
-            $table -> string('parent_phone')->nullable()->after('parent_name');
-            $table -> string('parent_email')->nullable()->after('parent_phone');
-            $table -> string('previous_school')->nullable()->after('parent_email');
-            $table -> string('scholarship')->nullable()->after('previous_school');
-            $table -> string('contact_urgent')->nullable()->after('scholarship');
-            $table -> string('medical_info')->nullable()->after('contact_urgent');
+            $table->string('parent_name')->nullable()->after('photo');
+            $table->string('parent_phone')->nullable()->after('parent_name');
+            $table->string('parent_email')->nullable()->after('parent_phone');
+            $table->string('previous_school')->nullable()->after('parent_email');
+            $table->string('scholarship')->nullable()->after('previous_school');
+            $table->string('contact_urgent')->nullable()->after('scholarship');
+            $table->string('medical_info')->nullable()->after('contact_urgent');
             // Statut et métadonnées
             $table->enum('statut', ['actif', 'inactif', 'suspendu'])->default('actif')->after('photo');
             $table->timestamp('derniere_connexion')->nullable()->after('statut');

@@ -324,7 +324,7 @@ export default function Index({ courses, academicYears, filters, auth }) {
                                             <th>Cours</th>
                                             <th>Année académique</th>
                                             <th>Crédits/Heures</th>
-                                            <th>Coût</th>
+
                                             <th>Enseignants</th>
                                             <th>Classes</th>
                                             <th>Progression</th>
@@ -405,22 +405,7 @@ export default function Index({ courses, academicYears, filters, auth }) {
                                                             </span>
                                                         </div>
                                                     </td>
-                                                    <td>
-                                                        <div>
-                                                            <strong>
-                                                                {formatCurrency(
-                                                                    totalCost
-                                                                )}
-                                                            </strong>
-                                                            <br />
-                                                            <small className="text-muted">
-                                                                {formatCurrency(
-                                                                    course.hourly_rate
-                                                                )}
-                                                                /h
-                                                            </small>
-                                                        </div>
-                                                    </td>
+
                                                     <td>
                                                         <div className="d-flex align-items-center">
                                                             <span className="badge badge-primary mr-1">
@@ -432,7 +417,7 @@ export default function Index({ courses, academicYears, filters, auth }) {
                                                                 0 && (
                                                                 <Link
                                                                     href={route(
-                                                                        "academic.courses.show",
+                                                                        "academic.courses.teachers",
                                                                         course.id
                                                                     )}
                                                                     className="btn btn-sm btn-outline-primary"
@@ -454,7 +439,7 @@ export default function Index({ courses, academicYears, filters, auth }) {
                                                                 0 && (
                                                                 <Link
                                                                     href={route(
-                                                                        "academic.courses.show",
+                                                                        "academic.courses.classes",
                                                                         course.id
                                                                     )}
                                                                     className="btn btn-sm btn-outline-secondary"

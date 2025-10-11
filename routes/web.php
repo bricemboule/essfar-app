@@ -101,22 +101,6 @@ Route::middleware(['auth', 'role:etudiant'])->prefix('etudiant')->name('etudiant
         ->name('grades');
 });
 
-// Routes ENSEIGNANT
-/*Route::middleware(['auth', 'role:enseignant'])->prefix('enseignant')->name('enseignant.')->group(function () {
-    Route::get('/dashboard', fn () => Inertia::render('Dashboards/Enseignant/Dashboard'))
-        ->name('dashboard');
-    
-    Route::get('/schedule', function() {
-        return redirect()->route('schedules.teacher', auth()->user());
-    })->name('schedule');
-    
-    Route::get('/courses', fn () => Inertia::render('Dashboards/Enseignant/Courses'))
-        ->name('courses');
-    Route::get('/classes', fn () => Inertia::render('Dashboards/Enseignant/Classes'))
-        ->name('classes');
-    Route::get('/attendance', fn () => Inertia::render('Dashboards/Enseignant/Attendance'))
-        ->name('attendance');
-});*/
 
 // Routes GESTIONNAIRE SCOLARITÉ
 Route::middleware(['auth', 'role:gestionnaire_scolarite,chef_scolarite,admin'])->prefix('gestionnaire')->name('gestionnaire.')->group(function () {
@@ -237,15 +221,73 @@ Route::middleware(['auth'])->group(function () {
         ->name('schedules.class');
     
     // Gestion des plannings (permissions spéciales)
-    Route::middleware(['permission:manage_schedules'])->group(function () {
-        Route::resource('schedules', ScheduleController::class);
-        Route::post('schedules/{schedule}/complete', [ScheduleController::class, 'markCompleted'])
-            ->name('schedules.complete');
-        Route::post('schedules/{schedule}/cancel', [ScheduleController::class, 'cancel'])
-            ->name('schedules.cancel');
-        Route::post('schedules/send-email', [ScheduleController::class, 'sendScheduleEmail'])
-            ->name('schedules.send-email');
-    });
+ Route::middleware(['auth', 'permission:manage_schedules'])->prefix('planning')->name('planning.')->group(function () {
+    
+    Route::resource('/', ScheduleController::class)->parameters([
+        '' => 'schedule'
+    ])->names([
+        'index' => 'index',
+        'create' => 'create',
+        'store' => 'store',
+        'show' => 'show',
+        'edit' => 'edit',
+        'update' => 'update',
+        'destroy' => 'destroy'
+    ]);
+
+    Route::post('/{schedule}/mark-completed', [ScheduleController::class, 'markCompleted'])
+        ->name('mark-completed');
+    
+    // Annuler une séance avec raison
+    Route::post('/{schedule}/cancel', [ScheduleController::class, 'cancel'])
+        ->name('cancel');
+    
+    // Actions groupées sur plusieurs séances
+    Route::post('/bulk-action', [ScheduleController::class, 'bulkAction'])
+        ->name('bulk-action');
+
+ 
+    Route::get('/teacher/{teacher}', [ScheduleController::class, 'teacherSchedule'])
+        ->name('teacher');
+    
+    // Planning d'une classe spécifique
+    Route::get('/class/{class}', [ScheduleController::class, 'classSchedule'])
+        ->name('class');
+
+   
+    Route::get('/reports/hours', [ScheduleController::class, 'hoursReport'])
+        ->name('hours-report');
+    
+   
+    Route::get('/rapport/honoraire', [ScheduleController::class, 'teacherEarningsReport'])
+        ->name('honoraire');
+
+    Route::post('/send-email', [ScheduleController::class, 'sendScheduleEmail'])
+        ->name('send-email');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Exports (Excel, PDF, CSV)
+    |--------------------------------------------------------------------------
+    */
+    // Exporter le planning général
+    Route::get('/export/schedule', [ScheduleController::class, 'exportClassSchedulePdf'])
+        ->name('export.planning');
+    Route::get('/classe/{class}/export-pdf', [ScheduleController::class, 'exportClassSchedulePdf'])
+    ->name('class.export-pdf');
+    
+    // Exporter le rapport d'heures
+    Route::get('/export/hours-report', [ScheduleController::class, 'exportHoursReport'])
+        ->name('export.hours-report');
+    
+    // Exporter le rapport des honoraires
+    Route::get('/export/earnings-report', [ScheduleController::class, 'exportEarningsReport'])
+        ->name('export.earnings-report');
+
+    Route::get('/classes/{class}/courses', [CourseController::class, 'coursesByClass'])
+    ->name('classes.courses');
+
+});
     
     // Rapports (selon les permissions)
     Route::middleware(['permission:view_reports'])->prefix('reports')->name('reports.')->group(function () {
@@ -257,23 +299,36 @@ Route::middleware(['auth'])->group(function () {
     
     // Rapports financiers (comptables + direction)
     Route::middleware(['permission:view_financial_reports'])->group(function () {
-        Route::get('/reports/teacher-earnings', [ReportsController::class, 'teacherEarningsReport'])
-            ->name('reports.teacher-earnings');
-        Route::get('/reports/export-earnings', [ReportsController::class, 'exportTeacherEarnings'])
-            ->name('reports.export-earnings');
+        
+        Route::get('/reports/teacher-earnings/export', [ReportsController::class, 'exportTeacherEarningsPdfRequest'])
+    ->name('reports.export-earnings');
+    
     });
     
     // Gestion académique (chef scolarité + direction académique)
-    Route::middleware(['permission:manage_academic'])->prefix('academic')->name('academic.')->group(function () {
+   Route::middleware(['permission:manage_academic'])
+    ->prefix('academic')
+    ->name('academic.')
+    ->group(function () {
+
         Route::resource('years', AcademicYearController::class);
         Route::resource('classes', SchoolClassController::class);
-        Route::get('/etudiants/export', [EtudiantController::class, 'export'])->name('etudiants.export');
+
+        Route::get('/etudiants/export', [EtudiantController::class, 'export'])
+            ->name('etudiants.export');
         Route::resource('etudiants', EtudiantController::class);
         Route::resource('enseignants', EnseignantController::class);
+
+        Route::get('/courses/{course}/teachers', [CourseController::class, 'teachers'])
+            ->name('courses.teachers');
+
+        Route::get('/courses/{course}/classes', [CourseController::class, 'classes'])
+            ->name('courses.classes');
+
         Route::resource('courses', CourseController::class);
         Route::resource('classrooms', ClassroomController::class);
-       
     });
+
 });
 
 // Routes de profil (tous les utilisateurs connectés)

@@ -526,7 +526,7 @@ export default function Dashboard({
                                                 ) : (
                                                     <tr>
                                                         <td
-                                                            colspan="5"
+                                                            colSpan="5"
                                                             className="text-center text-muted py-3"
                                                         >
                                                             <i className="fas fa-inbox fa-2x mb-2"></i>
@@ -784,7 +784,7 @@ export default function Dashboard({
                 </div>
             </section>
 
-            <style jsx>{`
+            <style>{`
                 .schedule-item {
                     transition: all 0.2s ease;
                 }

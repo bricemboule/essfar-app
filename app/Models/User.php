@@ -24,6 +24,8 @@ class User extends Authenticatable
         'date_naissance',
         'lieu_naissance',
         'sexe',
+        'grade',
+        'specialite',
         'photo',
         'statut',
         'parent_name',
@@ -220,6 +222,8 @@ class User extends Authenticatable
                 'view_budget_reports'
             ],
             'chef_scolarite' => [
+                'view_financial_reports',
+                'view_teacher_earnings',
                 'manage_schedules',
                 'manage_classrooms',
                 'manage_courses',

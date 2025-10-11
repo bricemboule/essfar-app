@@ -10,13 +10,13 @@ return new class extends Migration
     {
         // Table de liaison Classe-Cours
         Schema::create('class_courses', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('school_class_id')->constrained()->onDelete('cascade');
-            $table->foreignId('course_id')->constrained()->onDelete('cascade');
-            $table->timestamps();
-
-            $table->unique(['school_class_id', 'course_id']);
-        });
+        $table->id();
+        $table->foreignId('school_class_id')->constrained('school_classes')->onDelete('cascade');
+        $table->foreignId('course_id')->constrained()->onDelete('cascade');
+        $table->foreignId('academic_year_id')->nullable()->constrained('academic_years')->onDelete('set null');
+        $table->foreignId('teacher_id')->nullable()->constrained('users')->onDelete('set null');
+        $table->timestamps();
+    });
 
         // Table de liaison Cours-Enseignants
         Schema::create('course_teachers', function (Blueprint $table) {

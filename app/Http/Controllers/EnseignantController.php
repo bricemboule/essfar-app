@@ -80,39 +80,39 @@ class EnseignantController extends Controller
      */
     public function store(Request $request)
     {
+
+        
         $validatedData = $request->validate([
             // Informations personnelles
             'name' => 'required|string|max:255',
-            'prenom' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
-            'password_confirmation' => 'required|same:password',
             'telephone' => 'required|string|max:20',
             'adresse' => 'nullable|string|max:500',
             'date_naissance' => 'required|date|before:today',
             'lieu_naissance' => 'nullable|string|max:255',
             'sexe' => 'required|in:M,F',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            
+         
             // Informations professionnelles
-            'specialization' => 'required|string|max:255',
-            'qualification' => 'required|string|max:255',
-            'experience_years' => 'required|integer|min:0|max:50',
-            'hire_date' => 'required|date',
+            'specialite' => 'required|string|max:255',
+            'grade' => 'required|string|max:255',
+            'date_embauche' => 'required|date',
             'status' => 'required|in:actif,inactif,conge',
             'notes_admin' => 'nullable|string|max:1000',
             
             // Cours assignés
-            'courses' => 'required|array|min:1',
+            'courses' => 'nullable|array|min:1',
             'courses.*' => 'exists:courses,id',
             
             // Informations de contrat
-            'contract_type' => 'required|in:permanent,temporary,hourly,project',
-            'hourly_rate' => 'required_if:contract_type,hourly|nullable|numeric|min:0',
-            'monthly_salary' => 'required_unless:contract_type,hourly|nullable|numeric|min:0',
+            'type_contrat' => 'required|in:horaire,projet',
+            'taux_horaire' => 'required_if:type_contrat,horaire|nullable|numeric|min:0',
+            'salaire_mensuel' => 'nullable|required_unless:type_contrat,horaire|numeric|min:0',
             'contract_start_date' => 'required|date',
             'contract_end_date' => 'nullable|date|after:contract_start_date',
         ]);
+
+    
 
         DB::beginTransaction();
 
@@ -120,15 +120,15 @@ class EnseignantController extends Controller
             // Gérer l'upload de photo
             $photoPath = null;
             if ($request->hasFile('photo')) {
-                $photoPath = $request->file('photo')->store('teachers/photos', 'public');
+                $photoPath = $request->file('photo')->store('enseignant/photos', 'public');
             }
 
+        
             // Créer l'utilisateur enseignant
             $teacher = User::create([
                 'name' => $validatedData['name'],
-                'prenom' => $validatedData['prenom'],
                 'email' => $validatedData['email'],
-                'password' => Hash::make($validatedData['password']),
+                'password' => Hash::make('password'),
                 'role' => 'enseignant',
                 'telephone' => $validatedData['telephone'],
                 'adresse' => $validatedData['adresse'],
@@ -137,31 +137,48 @@ class EnseignantController extends Controller
                 'sexe' => $validatedData['sexe'],
                 'photo' => $photoPath,
                 'statut' => $validatedData['status'],
+                'specialite' =>$validatedData['specialite'],
+                'grade' => $validatedData['grade'],
                 'notes_admin' => $validatedData['notes_admin'],
             ]);
+
+         
 
             // Générer le matricule
             $teacher->generateMatricule();
 
             // Assigner les cours à l'enseignant
-            $courses = Course::whereIn('id', $validatedData['courses'])->get();
-            $teacher->teacherCourses()->attach($validatedData['courses']);
+           // Assigner les cours à l'enseignant uniquement si des cours sont fournis
+                if (!empty($validatedData['courses'])) {
+                    $courses = Course::whereIn('id', $validatedData['courses'])->get();
+
+                    $pivotData = [];
+                    foreach ($courses as $course) {
+                        $pivotData[$course->id] = [
+                            'academic_year_id' => $validatedData['academic_year_id'] ?? null,
+                            'assigned_at' => now(),
+                        ];
+                    }
+
+                    $teacher->teacherCourses()->attach($pivotData);
+                }
+
 
             // Créer le contrat global pour tous les cours
-            $contract = $this->createUnifiedContract($teacher, $validatedData, $courses);
+            //$contract = $this->createUnifiedContract($teacher, $validatedData, $courses);
 
             DB::commit();
 
             // Envoyer notification
-            $teacher->notify(new TeacherAccountCreated([
-                'email' => $validatedData['email'],
-                'password' => $validatedData['password'],
-                'matricule' => $teacher->matricule,
-                'courses_count' => count($validatedData['courses']),
-                'contract_number' => $contract->contract_number,
-            ]));
+           /*$teacher->notify(new TeacherAccountCreated([
+                    'email' => $validatedData['email'],
+                    'password' => $validatedData['password'],
+                    'matricule' => $teacher->matricule,
+                    'courses_count' => count($validatedData['courses']),
+                // 'contract_number' => $contract->contract_number,
+            ]));*/
 
-            return redirect()->route('admin.teachers.index')
+            return redirect()->route('academic.enseignants.index')
                 ->with('success', "L'enseignant {$teacher->name} {$teacher->prenom} a été créé avec succès.");
 
         } catch (\Exception $e) {
@@ -186,23 +203,23 @@ class EnseignantController extends Controller
         $totalHours = $courses->sum('total_hours');
         
         // Calculer la rémunération totale
-        if ($validatedData['contract_type'] === 'hourly') {
+        if ($validatedData['contract_type'] === 'horaire') {
             $totalCompensation = $courses->sum(function($course) use ($validatedData) {
-                return $course->total_hours * $validatedData['hourly_rate'];
+                return $course->total_hours * $validatedData['taux_horaire'];
             });
         } else {
             // Pour les salaires mensuels, calculer sur 12 mois
-            $totalCompensation = $validatedData['monthly_salary'] * 12;
+            $totalCompensation = $validatedData['salaire_mensuel'] * 12;
         }
 
         return TeacherContract::create([
             'teacher_id' => $teacher->id,
             'contract_number' => $this->generateContractNumber(),
-            'contract_type' => $validatedData['contract_type'],
+            'type_contrat' => $validatedData['type_contrat'],
             'start_date' => $validatedData['contract_start_date'],
             'end_date' => $validatedData['contract_end_date'],
-            'hourly_rate' => $validatedData['hourly_rate'],
-            'monthly_salary' => $validatedData['monthly_salary'],
+            'taux_horaire' => $validatedData['taux_horaire'],
+            'salaire__mensuel' => $validatedData['salaire__mensuel'],
             'total_hours' => $totalHours,
             'total_compensation' => $totalCompensation,
             'courses_summary' => $courses->pluck('name')->join(', '),
@@ -225,7 +242,7 @@ class EnseignantController extends Controller
                 'code' => $course->code,
                 'credits' => $course->credits,
                 'total_hours' => $course->total_hours,
-                'hourly_rate' => $course->hourly_rate,
+                'taux_horaire' => $course->hourly_rate,
                 'total_compensation' => $course->total_hours * $course->hourly_rate,
             ];
         })->toArray();
@@ -236,12 +253,13 @@ class EnseignantController extends Controller
      */
     public function show(User $teacher)
     {
-        $teacher->load(['teacherCourses', 'teacherSchedules']);
+        $teacher->load(['teacherCourses']);
+        //$teacher->load(['teacherCourses', 'teacherSchedules']);
         
         // Contrat actuel
-        $currentContract = TeacherContract::where('teacher_id', $teacher->id)
+        /*$currentContract = TeacherContract::where('teacher_id', $teacher->id)
             ->where('status', 'active')
-            ->first();
+            ->first();*/
 
         // Statistiques d'enseignement
         $teachingStats = [
@@ -252,9 +270,9 @@ class EnseignantController extends Controller
             'classes_taught' => $this->getClassesTaught($teacher->id),
         ];
 
-        return Inertia::render('Admin/Teachers/Show', [
+        return Inertia::render('Scolarite/Enseignant/Show', [
             'teacher' => $teacher,
-            'currentContract' => $currentContract,
+            //'currentContract' => $currentContract,
             'teachingStats' => $teachingStats,
             'recentSchedules' => $teacher->teacherSchedules()
                 ->with(['course'])
@@ -263,6 +281,190 @@ class EnseignantController extends Controller
                 ->get(),
         ]);
     }
+
+    /**
+ * Afficher le formulaire d'édition d'un enseignant
+ */
+public function edit(User $teacher)
+{
+    // Charger les relations nécessaires
+    $teacher->load(['teacherCourses']);
+    
+    // Récupérer le contrat actif si existant
+    /*$activeContract = TeacherContract::where('teacher_id', $teacher->id)
+        ->where('status', 'active')
+        ->first();*/
+    
+    return Inertia::render('Scolarite/Enseignant/Edit', [
+        'teacher' => $teacher,
+        'courses' => Course::orderBy('name')->get(),
+        'academicYears' => AcademicYear::orderBy('name', 'desc')->get(),
+        'assignedCourses' => $teacher->teacherCourses->pluck('id')->toArray(),
+        //'activeContract' => $activeContract,
+    ]);
+}
+
+/**
+ * Mettre à jour les informations d'un enseignant
+ */
+public function update(Request $request, User $teacher)
+{
+    $validatedData = $request->validate([
+        // Informations personnelles
+        'name' => 'required|string|max:255',
+        'email' => 'required|string|email|max:255|unique:users,email,' . $teacher->id,
+        'telephone' => 'required|string|max:20',
+        'adresse' => 'nullable|string|max:500',
+        'date_naissance' => 'required|date|before:today',
+        'lieu_naissance' => 'nullable|string|max:255',
+        'sexe' => 'required|in:M,F',
+        'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+     
+        // Informations professionnelles
+        'specialite' => 'required|string|max:255',
+        'grade' => 'required|string|max:255',
+        'date_embauche' => 'required|date',
+        'status' => 'required|in:actif,inactif,conge',
+        'notes_admin' => 'nullable|string|max:1000',
+        
+        // Cours assignés
+        'courses' => 'nullable|array',
+        'courses.*' => 'exists:courses,id',
+        'academic_year_id' => 'nullable|exists:academic_years,id',
+        
+        // Informations de contrat (optionnelles pour la mise à jour)
+        'type_contrat' => 'nullable|in:horaire,projet',
+        'taux_horaire' => 'nullable|numeric|min:0',
+        'salaire_mensuel' => 'nullable|numeric|min:0',
+        'update_contract' => 'boolean', // Pour savoir si on doit mettre à jour le contrat
+    ]);
+
+    DB::beginTransaction();
+
+    try {
+        // Gérer l'upload de photo
+        if ($request->hasFile('photo')) {
+            // Supprimer l'ancienne photo si elle existe
+            if ($teacher->photo) {
+                Storage::disk('public')->delete($teacher->photo);
+            }
+            $validatedData['photo'] = $request->file('photo')->store('enseignant/photos', 'public');
+        }
+
+        // Mettre à jour les informations de l'enseignant
+        $teacher->update([
+            'name' => $validatedData['name'],
+            'email' => $validatedData['email'],
+            'telephone' => $validatedData['telephone'],
+            'adresse' => $validatedData['adresse'],
+            'date_naissance' => $validatedData['date_naissance'],
+            'lieu_naissance' => $validatedData['lieu_naissance'],
+            'sexe' => $validatedData['sexe'],
+            'photo' => $validatedData['photo'] ?? $teacher->photo,
+            'statut' => $validatedData['status'],
+            'specialite' => $validatedData['specialite'],
+            'grade' => $validatedData['grade'],
+            'notes_admin' => $validatedData['notes_admin'],
+        ]);
+
+        // Mettre à jour les cours assignés si fournis
+        if (isset($validatedData['courses'])) {
+            if (!empty($validatedData['courses'])) {
+                $courses = Course::whereIn('id', $validatedData['courses'])->get();
+
+                $pivotData = [];
+                foreach ($courses as $course) {
+                    $pivotData[$course->id] = [
+                        'academic_year_id' => $validatedData['academic_year_id'] ?? null,
+                        'assigned_at' => now(),
+                    ];
+                }
+
+                $teacher->teacherCourses()->sync($pivotData);
+            } else {
+                // Si le tableau est vide, détacher tous les cours
+                $teacher->teacherCourses()->detach();
+            }
+        }
+
+        // Mettre à jour le contrat si demandé
+        /*if ($request->boolean('update_contract') && isset($validatedData['type_contrat'])) {
+            $activeContract = TeacherContract::where('teacher_id', $teacher->id)
+                ->where('status', 'active')
+                ->first();
+
+            if ($activeContract) {
+                $activeContract->update([
+                    'type_contrat' => $validatedData['type_contrat'],
+                    'taux_horaire' => $validatedData['taux_horaire'] ?? $activeContract->taux_horaire,
+                    'salaire_mensuel' => $validatedData['salaire_mensuel'] ?? $activeContract->salaire_mensuel,
+                    'updated_at' => now(),
+                ]);
+            }
+        }*/
+
+        DB::commit();
+
+        return redirect()->route('academic.enseignants.index')
+            ->with('success', "Les informations de l'enseignant {$teacher->name} ont été mises à jour avec succès.");
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        
+        // Supprimer la nouvelle photo en cas d'erreur
+        if (isset($validatedData['photo']) && $validatedData['photo'] !== $teacher->photo) {
+            Storage::disk('public')->delete($validatedData['photo']);
+        }
+
+        return back()->withErrors([
+            'error' => 'Erreur lors de la mise à jour de l\'enseignant: ' . $e->getMessage()
+        ])->withInput();
+    }
+}
+
+/**
+ * Supprimer un enseignant (soft delete recommandé)
+ */
+public function destroy(User $teacher)
+{
+    DB::beginTransaction();
+
+    try {
+        // Vérifier s'il y a des contrats actifs
+        /*$activeContracts = TeacherContract::where('teacher_id', $teacher->id)
+            ->where('status', 'active')
+            ->count();
+
+        if ($activeContracts > 0) {
+            return back()->withErrors([
+                'error' => 'Impossible de supprimer cet enseignant car il a des contrats actifs. Veuillez d\'abord résilier les contrats.'
+            ]);
+        }*/
+
+        // Détacher tous les cours
+        $teacher->teacherCourses()->detach();
+
+        // Changer le statut au lieu de supprimer (soft delete manuel)
+        $teacher->update([
+            'statut' => 'inactif',
+            'email' => $teacher->email . '_deleted_' . time(), // Pour éviter les conflits d'email
+        ]);
+
+        // Ou vraiment supprimer si vous préférez
+        // $teacher->delete();
+
+        DB::commit();
+
+        return redirect()->route('academic.enseignants.index')
+            ->with('success', 'L\'enseignant a été désactivé avec succès.');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return back()->withErrors([
+            'error' => 'Erreur lors de la suppression: ' . $e->getMessage()
+        ]);
+    }
+}
 
     /**
      * Gestion des contrats
@@ -286,7 +488,7 @@ class EnseignantController extends Controller
 
         $contracts = $query->orderBy('created_at', 'desc')->paginate(15);
 
-        return Inertia::render('Admin/Teachers/Contracts', [
+        return Inertia::render('Scolarite/Enseignant/Contracts', [
             'contracts' => $contracts,
             'filters' => $request->only(['status', 'type', 'expiring']),
             'statistics' => [
@@ -306,7 +508,7 @@ class EnseignantController extends Controller
      */
     public function createContract(User $teacher)
     {
-        return Inertia::render('Admin/Teachers/CreateContract', [
+        return Inertia::render('Scolarite/Enseignant/CreateContract', [
             'teacher' => $teacher->load(['teacherCourses']),
             'courses' => Course::orderBy('name')->get(),
             'currentContract' => TeacherContract::where('teacher_id', $teacher->id)
@@ -321,7 +523,7 @@ class EnseignantController extends Controller
     public function storeContract(Request $request, User $teacher)
     {
         $validatedData = $request->validate([
-            'contract_type' => 'required|in:permanent,temporary,hourly,project',
+            'type_contrat' => 'required|in:permanent,temporary,hourly,project',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after:start_date',
             'hourly_rate' => 'required_if:contract_type,hourly|nullable|numeric|min:0',
@@ -396,7 +598,7 @@ class EnseignantController extends Controller
             $earnings[] = [
                 'course_name' => $course->name,
                 'course_code' => $course->code,
-                'hourly_rate' => $course->hourly_rate,
+                'taux_horaire' => $course->taux_horaire,
                 'completed_hours' => $course->getCompletedHours(),
                 'total_earnings' => $courseEarnings,
             ];
@@ -437,9 +639,9 @@ class EnseignantController extends Controller
             // Ajustement salarial
             if ($request->filled('salary_adjustment')) {
                 if ($contract->contract_type === 'hourly') {
-                    $updates['hourly_rate'] = $contract->hourly_rate + $request->salary_adjustment;
+                    $updates['taux_horaire'] = $contract->taux_horaire + $request->salary_adjustment;
                 } else {
-                    $updates['monthly_salary'] = $contract->monthly_salary + $request->salary_adjustment;
+                    $updates['monthly_salary'] = $contract->salaire_mensuel + $request->salary_adjustment;
                 }
                 
                 // Recalculer la compensation totale
@@ -584,88 +786,5 @@ class EnseignantController extends Controller
     }
 }
 
-/* ========== MODÈLE TEACHER CONTRACT ADAPTÉ ========== */
 
-namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-
-class TeacherContract extends Model
-{
-    use HasFactory;
-
-    protected $fillable = [
-        'teacher_id',
-        'contract_number',
-        'contract_type',
-        'start_date',
-        'end_date',
-        'hourly_rate',
-        'monthly_salary',
-        'total_hours',
-        'total_compensation',
-        'courses_summary',
-        'course_details',
-        'terms_and_conditions',
-        'status',
-        'termination_date',
-        'termination_reason',
-        'renewed_at',
-        'renewed_by',
-        'terminated_by',
-        'created_by',
-    ];
-
-    protected $casts = [
-        'start_date' => 'date',
-        'end_date' => 'date',
-        'termination_date' => 'date',
-        'renewed_at' => 'datetime',
-        'hourly_rate' => 'decimal:2',
-        'monthly_salary' => 'decimal:2',
-        'total_compensation' => 'decimal:2',
-        'course_details' => 'array',
-    ];
-
-    /**
-     * Relations
-     */
-    public function teacher()
-    {
-        return $this->belongsTo(User::class, 'teacher_id');
-    }
-
-    public function createdBy()
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    /**
-     * Méthodes utilitaires
-     */
-    public function getMonthsRemainingAttribute()
-    {
-        if (!$this->end_date) return null;
-        return now()->diffInMonths($this->end_date, false);
-    }
-
-    public function getIsExpiringAttribute()
-    {
-        return $this->end_date && $this->end_date <= now()->addMonths(3);
-    }
-
-    /**
-     * Scopes
-     */
-    public function scopeActive($query)
-    {
-        return $query->where('status', 'active');
-    }
-
-    public function scopeExpiring($query, $months = 3)
-    {
-        return $query->where('end_date', '<=', now()->addMonths($months))
-                    ->where('status', 'active');
-    }
-}

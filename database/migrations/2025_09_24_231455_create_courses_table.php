@@ -11,12 +11,11 @@ return new class extends Migration
     {
         Schema::create('courses', function (Blueprint $table) {
             $table->id();
-            $table->string('name'); // ex: "Programmation Web"
-            $table->string('code')->unique(); // ex: "INFO-301"
+            $table->string('name'); 
+            $table->string('code')->unique();
             $table->text('description')->nullable();
             $table->integer('credits')->default(3);
-            $table->integer('total_hours'); // Total d'heures prévues
-            $table->decimal('hourly_rate', 8, 2)->default(0); // Tarif horaire enseignant
+            $table->integer('total_hours'); 
             $table->foreignId('academic_year_id')->constrained()->onDelete('cascade');
             $table->timestamps();
 

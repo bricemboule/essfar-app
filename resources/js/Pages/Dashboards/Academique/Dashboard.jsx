@@ -728,7 +728,7 @@ export default function Dashboard({
                 </div>
             </section>
 
-            <style jsx>{`
+            <style>{`
                 .cursor-pointer {
                     cursor: pointer;
                 }

@@ -69,8 +69,6 @@ class EtudiantController extends Controller
     });
 
 
-    
-
     // Statistiques
     $stats = [
         'total' => User::where('role', 'etudiant')->count(),
@@ -121,11 +119,10 @@ class EtudiantController extends Controller
      */
     public function store(Request $request)
     {
-        
+       
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8',
             'telephone' => 'nullable|string|max:20',
             'adresse' => 'nullable|string|max:500',
             'date_naissance' => 'required|date|before:today',
@@ -144,7 +141,6 @@ class EtudiantController extends Controller
             'notes_admin' => 'nullable|string|max:1000',
         ]);
 
-        
 
         DB::beginTransaction();
 
@@ -165,11 +161,12 @@ class EtudiantController extends Controller
                 $photoPath = $request->file('photo')->store('students/photos', 'public');
             }
            
+            
             // Créer l'étudiant
             $student = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
-                'password' => Hash::make($request->password),
+                'password' => Hash::make('password'),
                 'role' => 'etudiant',
                 'telephone' => $request->telephone,
                 'adresse' => $request->adresse,

@@ -6,8 +6,6 @@ export default function Create({ academicYears, classes }) {
     const { data, setData, post, processing, errors } = useForm({
         name: "",
         email: "",
-        password: "",
-        password_confirmation: "",
         telephone: "",
         adresse: "",
         date_naissance: "",
@@ -403,79 +401,6 @@ export default function Create({ academicYears, classes }) {
                                                         {errors.email && (
                                                             <span className="invalid-feedback">
                                                                 {errors.email}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="col-md-6">
-                                                    <div className="form-group">
-                                                        <label>
-                                                            Mot de passe{" "}
-                                                            <span className="text-danger">
-                                                                *
-                                                            </span>
-                                                        </label>
-                                                        <input
-                                                            type="password"
-                                                            className={`form-control ${
-                                                                errors.password
-                                                                    ? "is-invalid"
-                                                                    : ""
-                                                            }`}
-                                                            value={
-                                                                data.password
-                                                            }
-                                                            onChange={(e) =>
-                                                                setData(
-                                                                    "password",
-                                                                    e.target
-                                                                        .value
-                                                                )
-                                                            }
-                                                            placeholder="Minimum 8 caractères"
-                                                        />
-                                                        {errors.password && (
-                                                            <span className="invalid-feedback">
-                                                                {
-                                                                    errors.password
-                                                                }
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                <div className="col-md-6">
-                                                    <div className="form-group">
-                                                        <label>
-                                                            Confirmer le mot de
-                                                            passe{" "}
-                                                            <span className="text-danger">
-                                                                *
-                                                            </span>
-                                                        </label>
-                                                        <input
-                                                            type="password"
-                                                            className={`form-control ${
-                                                                errors.password_confirmation
-                                                                    ? "is-invalid"
-                                                                    : ""
-                                                            }`}
-                                                            value={
-                                                                data.password_confirmation
-                                                            }
-                                                            onChange={(e) =>
-                                                                setData(
-                                                                    "password_confirmation",
-                                                                    e.target
-                                                                        .value
-                                                                )
-                                                            }
-                                                        />
-                                                        {errors.password_confirmation && (
-                                                            <span className="invalid-feedback">
-                                                                {
-                                                                    errors.password_confirmation
-                                                                }
                                                             </span>
                                                         )}
                                                     </div>

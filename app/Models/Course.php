@@ -16,14 +16,12 @@ class Course extends Model
         'description',
         'credits',
         'total_hours',
-        'hourly_rate',
         'academic_year_id'
     ];
 
     protected $casts = [
         'credits' => 'integer',
         'total_hours' => 'integer',
-        'hourly_rate' => 'decimal:2'
     ];
 
     // Relations
@@ -34,13 +32,15 @@ class Course extends Model
 
     public function classes()
     {
-        return $this->belongsToMany(SchoolClass::class, 'class_courses');
+        return $this->belongsToMany(SchoolClass::class, 'class_courses')
+            ->withPivot('academic_year_id', 'teacher_id');
+
     }
 
     public function teachers()
     {
         return $this->belongsToMany(User::class, 'course_teachers', 'course_id', 'teacher_id')
-                                ->withPivot('academic_year_id', 'assigned_at');
+                                ->withPivot('taux_horaire','academic_year_id', 'assigned_at');
     }
 
     public function schedules()

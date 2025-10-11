@@ -26,7 +26,7 @@ class DefaultUsersSeeder extends Seeder
         // Directeur Général
         $dg = User::create([
             'name' => 'Directeur Général',
-            'email' => 'patric.seumen@essfar.com',
+            'email' => 'patrick.seumen@essfar.com',
             'password' => Hash::make('password'),
             'role' => 'directeur_general',
             'telephone' => '+237 XXX XXX XXX',
@@ -89,63 +89,6 @@ class DefaultUsersSeeder extends Seeder
         ]);
         $com->generateMatricule();
 
-        // Enseignants de test
-        $enseignants = [
-            'Martin Kouam' => 'martin.kouam@essfar.edu',
-            'Marie Tchinda' => 'marie.tchinda@essfar.edu',
-            'Paul Ngando' => 'paul.ngando@essfar.edu',
-            'Claire Mballa' => 'claire.mballa@essfar.edu',
-            'Jean Fouda' => 'jean.fouda@essfar.edu',
-        ];
 
-        foreach ($enseignants as $name => $email) {
-            $enseignant = User::create([
-                'name' => $name,
-                'email' => $email,
-                'password' => Hash::make('password'),
-                'role' => 'enseignant',
-                'telephone' => '+237 XXX XXX XXX',
-                'statut' => 'actif',
-            ]);
-            $enseignant->generateMatricule();
-        }
-
-        // Étudiants de test
-        $etudiants = [
-            'Alice Mbongo' => 'alice.mbongo@student.essfar.edu',
-            'Bob Ndongo' => 'bob.ndongo@student.essfar.edu',
-            'Claire Manga' => 'claire.manga@student.essfar.edu',
-            'David Ayissi' => 'david.ayissi@student.essfar.edu',
-            'Emma Biya' => 'emma.biya@student.essfar.edu',
-            'Frank Eto\'o' => 'frank.etoo@student.essfar.edu',
-            'Grace Onana' => 'grace.onana@student.essfar.edu',
-            'Henri Nkomo' => 'henri.nkomo@student.essfar.edu',
-        ];
-
-        foreach ($etudiants as $name => $email) {
-            $etudiant = User::create([
-                'name' => $name,
-                'email' => $email,
-                'password' => Hash::make('password'),
-                'role' => 'etudiant',
-                'telephone' => '+237 XXX XXX XXX',
-                'date_naissance' => fake()->dateTimeBetween('-25 years', '-18 years'),
-                'sexe' => fake()->randomElement(['M', 'F']),
-                'statut' => 'actif',
-            ]);
-            $etudiant->generateMatricule();
-        }
-
-        $this->command->info('Utilisateurs par défaut créés avec succès !');
-        $this->command->line('');
-        $this->command->line('=== COMPTES DE TEST ===');
-        $this->command->line('Admin: admin@essfar.edu / password');
-        $this->command->line('DG: dg@essfar.edu / password');
-        $this->command->line('DA: da@essfar.edu / password');
-        $this->command->line('Chef Scolarité: chef.scolarite@essfar.edu / password');
-        $this->command->line('Comptable: comptable@essfar.edu / password');
-        $this->command->line('Communication: communication@essfar.edu / password');
-        $this->command->line('Enseignant: martin.kouam@essfar.edu / password');
-        $this->command->line('Étudiant: alice.mbongo@student.essfar.edu / password');
     }
 }

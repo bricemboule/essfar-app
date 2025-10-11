@@ -109,37 +109,6 @@ class HandleInertiaRequests extends Middleware
         ];
     }
 
-    private function getEnseignantMenu(): array
-    {
-        return [
-            [
-                'title' => 'Tableau de bord',
-                'url' => route('enseignant.dashboard'),
-                'icon' => 'fas fa-tachometer-alt',
-            ],
-            [
-                'title' => 'Mon Planning',
-                'url' => route('enseignant.schedule'),
-                'icon' => 'fas fa-calendar-alt',
-            ],
-            [
-                'title' => 'Mes Cours',
-                'url' => route('enseignant.courses'),
-                'icon' => 'fas fa-chalkboard-teacher',
-            ],
-            [
-                'title' => 'Mes Classes',
-                'url' => route('enseignant.classes'),
-                'icon' => 'fas fa-users',
-            ],
-            [
-                'title' => 'Présences',
-                'url' => route('enseignant.attendance'),
-                'icon' => 'fas fa-check-circle',
-            ],
-        ];
-    }
-
     private function getChefScolariteMenu(): array
     {
         return [
@@ -170,9 +139,9 @@ class HandleInertiaRequests extends Middleware
                 'title' => 'Gestion Planning',
                 'icon' => 'fas fa-calendar-check',
                 'children' => [
-                    ['title' => 'Plannings', 'url' => route('schedules.index')],
-                    ['title' => 'Créer séance', 'url' => route('schedules.create')],
-                    ['title' => 'Rapports heures', 'url' => route('reports.course-hours')],
+                    ['title' => 'Plannings', 'url' => route('planning.index')],
+                    ['title' => 'Créer séance', 'url' => route('planning.create')],
+                    ['title' => 'Rapports heures', 'url' => route('planning.hours-report')],
                 ]
             ]
           
@@ -190,7 +159,7 @@ class HandleInertiaRequests extends Middleware
             ],
             [
                 'title' => 'Planning',
-                'url' => route('schedules.index'),
+                'url' => route('planning.index'),
                 'icon' => 'fas fa-calendar',
             ],
             [
@@ -200,7 +169,7 @@ class HandleInertiaRequests extends Middleware
             ],
             [
                 'title' => 'Rapports',
-                'url' => route('reports.index'),
+                'url' => route('planning.hours-report'),
                 'icon' => 'fas fa-chart-bar',
             ],
         ];
@@ -218,9 +187,9 @@ class HandleInertiaRequests extends Middleware
                 'title' => 'Vue d\'ensemble',
                 'icon' => 'fas fa-eye',
                 'children' => [
-                    ['title' => 'Programmes', 'url' => route('academique.programs')],
-                    ['title' => 'Performance', 'url' => route('academique.performance')],
-                    ['title' => 'Enseignants', 'url' => route('academique.teachers')],
+                    ['title' => 'Programmes', 'url' => route('planning.hours-report')],
+                    ['title' => 'Performance', 'url' => route('planning.hours-report')],
+                    ['title' => 'Enseignants', 'url' => route('planning.hours-report')],
                 ]
             ],
                [
@@ -240,7 +209,7 @@ class HandleInertiaRequests extends Middleware
             ],
             [
                 'title' => 'Rapports Académiques',
-                'url' => route('reports.academic'),
+                'url' => route('planning.hours-report'),
                 'icon' => 'fas fa-chart-pie',
             ],
         ];
@@ -298,14 +267,14 @@ class HandleInertiaRequests extends Middleware
                 'title' => 'Gestion Financière',
                 'icon' => 'fas fa-euro-sign',
                 'children' => [
-                    ['title' => 'Honoraires Enseignants', 'url' => route('reports.teacher-earnings')],
-                    ['title' => 'Paiements', 'url' => route('comptable.payments')],
-                    ['title' => 'Factures', 'url' => route('comptable.invoices')],
+                    ['title' => 'Honoraires Enseignants', 'url' => route('planning.hours-report')],
+                    ['title' => 'Paiements', 'url' => route('planning.hours-report')],
+                    ['title' => 'Factures', 'url' => route('planning.hours-report')],
                 ]
             ],
             [
                 'title' => 'Rapports Financiers',
-                'url' => route('comptable.reports'),
+                'url' => route('planning.hours-report'),
                 'icon' => 'fas fa-chart-line',
             ],
         ];
@@ -321,17 +290,17 @@ class HandleInertiaRequests extends Middleware
             ],
             [
                 'title' => 'Annonces',
-                'url' => route('communication.announcements'),
+                'url' => route('planning.hours-report'),
                 'icon' => 'fas fa-newspaper',
             ],
             [
                 'title' => 'Notifications',
-                'url' => route('communication.notifications'),
+                'url' => route('planning.hours-report'),
                 'icon' => 'fas fa-bell',
             ],
             [
                 'title' => 'Envois Groupés',
-                'url' => route('communication.bulk-emails'),
+                'url' => route('planning.hours-report'),
                 'icon' => 'fas fa-envelope-bulk',
             ],
         ];

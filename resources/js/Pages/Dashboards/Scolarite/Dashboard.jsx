@@ -172,7 +172,7 @@ export default function Dashboard({
                                         : "Actualiser"}
                                 </button>
                                 <Link
-                                    href="/schedules/create"
+                                    href="/planning/create"
                                     className="btn btn-success btn-sm"
                                 >
                                     <i className="fas fa-plus mr-1"></i>
@@ -277,9 +277,6 @@ export default function Dashboard({
                                 <div className="card-body p-0">
                                     <div className="schedule-grid">
                                         <div className="schedule-header">
-                                            <div className="time-column">
-                                                Heure
-                                            </div>
                                             {[
                                                 "Lundi",
                                                 "Mardi",
@@ -287,6 +284,7 @@ export default function Dashboard({
                                                 "Jeudi",
                                                 "Vendredi",
                                                 "Samedi",
+                                                "Dimanche",
                                             ].map((day) => (
                                                 <div
                                                     key={day}
@@ -378,7 +376,7 @@ export default function Dashboard({
                                     <div className="row">
                                         <div className="col-6">
                                             <Link
-                                                href="/schedules"
+                                                href="/planning"
                                                 className="btn btn-primary btn-sm"
                                             >
                                                 <i className="fas fa-calendar mr-1"></i>

@@ -781,7 +781,7 @@ export default function Create({ courses, academicYears }) {
                                                         {errors.type_contrat && (
                                                             <span className="invalid-feedback">
                                                                 {
-                                                                    errors.typr_contrat
+                                                                    errors.type_contrat
                                                                 }
                                                             </span>
                                                         )}

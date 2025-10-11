@@ -22,6 +22,7 @@ class Schedule extends Model
         'day_of_week',
         'week_number',
         'status',
+        'completed_hours',
         'notes',
         'is_recurring'
     ];
