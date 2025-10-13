@@ -172,7 +172,7 @@ export default function Dashboard({
                                         : "Actualiser"}
                                 </button>
                                 <Link
-                                    href="/planning/create"
+                                    href={route("planning.create")}
                                     className="btn btn-success btn-sm"
                                 >
                                     <i className="fas fa-plus mr-1"></i>
@@ -376,7 +376,7 @@ export default function Dashboard({
                                     <div className="row">
                                         <div className="col-6">
                                             <Link
-                                                href="/planning"
+                                                href={route("planning.index")}
                                                 className="btn btn-primary btn-sm"
                                             >
                                                 <i className="fas fa-calendar mr-1"></i>
@@ -666,7 +666,9 @@ export default function Dashboard({
                                 </div>
                                 <div className="card-footer">
                                     <Link
-                                        href="/classrooms"
+                                        href={route(
+                                            "academic.classrooms.index"
+                                        )}
                                         className="btn btn-info btn-sm btn-block"
                                     >
                                         <i className="fas fa-building mr-1"></i>
@@ -687,7 +689,7 @@ export default function Dashboard({
                                     <div className="row">
                                         <div className="col-6 mb-3">
                                             <Link
-                                                href="/schedules/create"
+                                                href={route("planning.create")}
                                                 className="btn btn-app bg-success w-100"
                                             >
                                                 <i className="fas fa-calendar-plus"></i>

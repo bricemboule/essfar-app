@@ -1,5 +1,4 @@
 <?php
-// app/Models/SchoolClass.php
 
 namespace App\Models;
 
@@ -18,7 +17,7 @@ class SchoolClass extends Model
         'level',
         'academic_year_id',
         'capacity',
-        'description'
+        'description',
     ];
 
     // Relations
@@ -29,17 +28,24 @@ class SchoolClass extends Model
 
     public function students()
     {
-        return $this->belongsToMany(User::class, 'student_enrollments', 'school_class_id', 'student_id')
-                    ->wherePivot('academic_year_id', $this->academic_year_id);
+        return $this->belongsToMany(
+            User::class,
+            'student_enrollments',
+            'school_class_id',
+            'student_id'
+        )
+        ->where('users.role', 'etudiant')
+        ->wherePivot('status', 'active')
+        ->withPivot(['enrollment_date', 'status', 'academic_year_id'])
+        ->withTimestamps();
     }
 
     public function courses()
-{
-    return $this->belongsToMany(Course::class, 'class_courses')
-        ->withPivot('academic_year_id', 'teacher_id')
-        ->withTimestamps();
-}
-
+    {
+        return $this->belongsToMany(Course::class, 'class_courses')
+            ->withPivot(['academic_year_id', 'teacher_id'])
+            ->withTimestamps();
+    }
 
     public function schedules()
     {
@@ -51,14 +57,16 @@ class SchoolClass extends Model
         return $this->hasMany(StudentEnrollment::class);
     }
 
-    // Méthodes utilitaires
-    public function getStudentCountAttribute()
+    // Attributs calculés
+    public function getStudentCountAttribute(): int
     {
         return $this->students()->count();
     }
 
-    public function getFullNameAttribute()
+    public function getFullNameAttribute(): string
     {
-        return $this->name . ' - ' . $this->academicYear->name;
+        return $this->academicYear
+            ? "{$this->name} - {$this->academicYear->name}"
+            : $this->name;
     }
 }

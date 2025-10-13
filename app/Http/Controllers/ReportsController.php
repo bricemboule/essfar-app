@@ -23,96 +23,8 @@ class ReportsController extends Controller
         return Inertia::render('Reports/Index');
     }
 
-    // Rapport des honoraires des enseignants
-    public function teacherEarningsReport(Request $request)
-    {
-        $academicYear = AcademicYear::active()->first();
-        $startDate = Carbon::parse($request->start_date ?? $academicYear->start_date);
-        $endDate = Carbon::parse($request->end_date ?? now());
-        $teacherId = $request->teacher_id;
 
-        $query = User::where('role', 'enseignant')
-            ->with(['schedules' => function($query) use ($startDate, $endDate) {
-                $query->where('status', 'completed')
-                      ->whereBetween('start_time', [$startDate, $endDate])
-                      ->with('course');
-            }]);
-
-        if ($teacherId) {
-            $query->where('id', $teacherId);
-        }
-
-        $teachers = $query->get()->map(function($teacher) {
-            $totalHours = 0;
-            $totalEarnings = 0;
-            $courseBreakdown = [];
-
-            foreach ($teacher->schedules as $schedule) {
-                $hours = $schedule->getDurationInHours();
-                $earnings = $hours * $schedule->course->hourly_rate;
-                
-                $totalHours += $hours;
-                $totalEarnings += $earnings;
-
-                $courseKey = $schedule->course->name;
-                if (!isset($courseBreakdown[$courseKey])) {
-                    $courseBreakdown[$courseKey] = [
-                        'course_name' => $schedule->course->name,
-                        'hours' => 0,
-                        'earnings' => 0,
-                        'hourly_rate' => $schedule->course->hourly_rate
-                    ];
-                }
-                $courseBreakdown[$courseKey]['hours'] += $hours;
-                $courseBreakdown[$courseKey]['earnings'] += $earnings;
-            }
-
-            return [
-                'id' => $teacher->id,
-                'name' => $teacher->name,
-                'email' => $teacher->email,
-                'total_hours' => round($totalHours, 2),
-                'total_earnings' => round($totalEarnings, 2),
-                'avg_hourly_rate' => $totalHours > 0 ? round($totalEarnings / $totalHours, 2) : 0,
-                'course_breakdown' => array_values($courseBreakdown),
-                'sessions_count' => $teacher->schedules->count()
-            ];
-        });
-
-        // Calculs pour le résumé
-        $totalHours = $teachers->sum('total_hours');
-        $totalEarnings = $teachers->sum('total_earnings');
-        $averageHourlyRate = $teachers->avg('avg_hourly_rate');
-
-        // Si export demandé
-        if ($request->has('export')) {
-            $format = $request->format;
-            
-            if ($format === 'pdf') {
-                return $this->exportTeacherEarningsPdf($teachers, $startDate, $endDate, $totalHours, $totalEarnings, $averageHourlyRate);
-            } elseif ($format === 'excel') {
-                return $this->exportTeacherEarningsExcel($teachers, $startDate, $endDate, $totalHours, $totalEarnings, $averageHourlyRate);
-            }
-        }
-
-        return Inertia::render('Reports/TeacherEarnings', [
-            'earnings' => $teachers,
-            'allTeachers' => User::where('role', 'enseignant')->select('id', 'name')->get(),
-            'selectedTeacher' => $teacherId ? User::find($teacherId) : null,
-            'startDate' => $startDate->toDateString(),
-            'endDate' => $endDate->toDateString(),
-            'totalHours' => $totalHours,
-            'totalEarnings' => $totalEarnings,
-            'summary' => [
-                'total_teachers' => $teachers->count(),
-                'total_hours' => $totalHours,
-                'total_earnings' => $totalEarnings,
-                'average_hourly_rate' => $averageHourlyRate
-            ]
-        ]);
-    }
-
-    public function exportTeacherEarningsPdfRequest(Request $request)
+public function teacherEarningsReport(Request $request)
 {
     $academicYear = AcademicYear::active()->first();
     $startDate = Carbon::parse($request->start_date ?? $academicYear->start_date);
@@ -120,7 +32,7 @@ class ReportsController extends Controller
     $teacherId = $request->teacher_id;
 
     $query = User::where('role', 'enseignant')
-        ->with(['teacherSchedules' => function($query) use ($startDate, $endDate) {
+        ->with(['schedules' => function($query) use ($startDate, $endDate) {
             $query->where('status', 'completed')
                   ->whereBetween('start_time', [$startDate, $endDate])
                   ->with('course');
@@ -135,7 +47,104 @@ class ReportsController extends Controller
         $totalEarnings = 0;
         $courseBreakdown = [];
 
-        foreach ($teacher->teacherSchedules as $schedule) {
+        foreach ($teacher->schedules as $schedule) {
+            $hours = $schedule->getDurationInHours();
+
+            // Récupérer le taux horaire depuis la relation pivot
+            $teacherCourse = $schedule->course
+                ->teachers()
+                ->where('users.id', $teacher->id)
+                ->first();
+
+            $hourlyRate = $teacherCourse ? $teacherCourse->pivot->taux_horaire : 0;
+            $earnings = $hours * $hourlyRate;
+
+            $totalHours += $hours;
+            $totalEarnings += $earnings;
+
+            $courseKey = $schedule->course->name;
+            if (!isset($courseBreakdown[$courseKey])) {
+                $courseBreakdown[$courseKey] = [
+                    'course_name' => $schedule->course->name,
+                    'hours' => 0,
+                    'earnings' => 0,
+                    'hourly_rate' => $hourlyRate
+                ];
+            }
+            $courseBreakdown[$courseKey]['hours'] += $hours;
+            $courseBreakdown[$courseKey]['earnings'] += $earnings;
+        }
+
+        return [
+            'id' => $teacher->id,
+            'name' => $teacher->name,
+            'email' => $teacher->email,
+            'total_hours' => round($totalHours, 2),
+            'total_earnings' => round($totalEarnings, 2),
+            'avg_hourly_rate' => $totalHours > 0 ? round($totalEarnings / $totalHours, 2) : 0,
+            'course_breakdown' => array_values($courseBreakdown),
+            'sessions_count' => $teacher->schedules->count()
+        ];
+    });
+
+    $totalHours = $teachers->sum('total_hours');
+    $totalEarnings = $teachers->sum('total_earnings');
+    $averageHourlyRate = $teachers->avg('avg_hourly_rate');
+
+    // CORRECTION: Vérifier si c'est une demande d'export
+    if ($request->has('export') && $request->export == '1') {
+        $format = $request->format;
+        
+        if ($format === 'pdf') {
+            return $this->exportTeacherEarningsPdf($teachers, $startDate, $endDate, $totalHours, $totalEarnings, $averageHourlyRate);
+        } elseif ($format === 'excel') {
+            return $this->exportTeacherEarningsExcel($teachers, $startDate, $endDate, $totalHours, $totalEarnings, $averageHourlyRate);
+        }
+    }
+
+    // Sinon, afficher la page normale
+    return Inertia::render('Reports/TeacherEarnings', [
+        'earnings' => $teachers,
+        'allTeachers' => User::where('role', 'enseignant')->select('id', 'name')->get(),
+        'selectedTeacher' => $teacherId ? User::find($teacherId) : null,
+        'startDate' => $startDate->toDateString(),
+        'endDate' => $endDate->toDateString(),
+        'totalHours' => $totalHours,
+        'totalEarnings' => $totalEarnings,
+        'summary' => [
+            'total_teachers' => $teachers->count(),
+            'total_hours' => $totalHours,
+            'total_earnings' => $totalEarnings,
+            'average_hourly_rate' => $averageHourlyRate
+        ]
+    ]);
+}
+
+
+    public function exportTeacherEarningsPdfRequest(Request $request)
+{
+    $academicYear = AcademicYear::active()->first();
+    $startDate = Carbon::parse($request->start_date ?? $academicYear->start_date);
+    $endDate = Carbon::parse($request->end_date ?? now());
+    $teacherId = $request->teacher_id;
+
+    $query = User::where('role', 'enseignant')
+        ->with(['schedules' => function($query) use ($startDate, $endDate) {
+            $query->where('status', 'completed')
+                  ->whereBetween('start_time', [$startDate, $endDate])
+                  ->with('course');
+        }]);
+
+    if ($teacherId) {
+        $query->where('id', $teacherId);
+    }
+
+    $teachers = $query->get()->map(function($teacher) {
+        $totalHours = 0;
+        $totalEarnings = 0;
+        $courseBreakdown = [];
+
+        foreach ($teacher->schedules as $schedule) {
     $hours = $schedule->getDurationInHours();
 
     // Récupérer le taux horaire depuis la relation pivot
@@ -173,7 +182,7 @@ class ReportsController extends Controller
             'total_earnings' => round($totalEarnings, 2),
             'avg_hourly_rate' => $totalHours > 0 ? round($totalEarnings / $totalHours, 2) : 0,
             'course_breakdown' => array_values($courseBreakdown),
-            'sessions_count' => $teacher->teacherSchedules->count()
+            'sessions_count' => $teacher->schedules->count()
         ];
     });
 

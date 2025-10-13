@@ -133,25 +133,24 @@ class Schedule extends Model
     }
 
     // Vérification des conflits
-    public static function hasConflict($teacherId, $classroomId, $startTime, $endTime, $excludeId = null)
-    {
-        $query = self::where(function ($q) use ($teacherId, $classroomId) {
-            $q->where('teacher_id', $teacherId)
-              ->orWhere('classroom_id', $classroomId);
-        })
-        ->where(function ($q) use ($startTime, $endTime) {
-            $q->whereBetween('start_time', [$startTime, $endTime])
-              ->orWhereBetween('end_time', [$startTime, $endTime])
-              ->orWhere(function ($subq) use ($startTime, $endTime) {
-                  $subq->where('start_time', '<=', $startTime)
-                       ->where('end_time', '>=', $endTime);
-              });
+   public static function hasConflict($teacherId, $classroomId, $startTime, $endTime, $excludeId = null)
+{
+    $query = self::where(function ($q) use ($teacherId, $classroomId) {
+        $q->where('teacher_id', $teacherId)
+          ->orWhere('classroom_id', $classroomId);
+    })
+    ->where(function ($q) use ($startTime, $endTime) {
+        $q->where(function ($subq) use ($startTime, $endTime) {
+            $subq->where('start_time', '<', $endTime)
+                 ->where('end_time', '>', $startTime);
         });
+    });
 
-        if ($excludeId) {
-            $query->where('id', '!=', $excludeId);
-        }
-
-        return $query->exists();
+    if ($excludeId) {
+        $query->where('id', '!=', $excludeId);
     }
+
+    return $query->exists();
+}
+
 }

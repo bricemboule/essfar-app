@@ -3,7 +3,7 @@ import { Head, Link, useForm, router } from "@inertiajs/react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
-import SendScheduleEmailModal from "./ModalEnvoiPlanning";
+import SendScheduleEmailModal from "./SendScheduleEmailModal";
 import AdminLayout from "@/Layouts/AdminLayout";
 
 // Composant Card réutilisable
@@ -51,6 +51,14 @@ export default function Index({
     const [bulkAction, setBulkAction] = useState("");
     const [showCompletedModal, setShowCompletedModal] = useState(false);
     const [scheduleToComplete, setScheduleToComplete] = useState(null);
+    const [startDate, setStartDate] = useState(
+        new Date().toISOString().split("T")[0]
+    );
+    const [endDate, setEndDate] = useState(
+        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0]
+    );
     const [completedData, setCompletedData] = useState({
         hours: 0,
         minutes: 0,
@@ -164,8 +172,8 @@ export default function Index({
 
         setScheduleToComplete(schedule);
         setCompletedData({
-            duration_hours: durationHours, // valeur par défaut, mais modifiable
-            duration_minutes: durationMinutes, // optionnel
+            duration_hours: durationHours,
+            duration_minutes: durationMinutes,
         });
         setShowCompletedModal(true);
     };
@@ -466,22 +474,14 @@ export default function Index({
 
                         <div className="row mt-3">
                             <div className="col-md-12">
-                                <div className="btn-group">
+                                <div className="col-md-3">
                                     <button
                                         type="button"
-                                        className="btn btn-outline-success"
+                                        className="btn btn-success btn-block btn-lg"
                                         onClick={() => setShowEmailModal(true)}
                                     >
-                                        <i className="fas fa-envelope mr-1"></i>
-                                        Envoyer par email
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="btn btn-outline-info"
-                                        onClick={() => window.print()}
-                                    >
-                                        <i className="fas fa-download mr-1"></i>
-                                        Exporter
+                                        <i className="fas fa-envelope mr-2"></i>
+                                        Envoyer plannings
                                     </button>
                                 </div>
                             </div>
@@ -1583,24 +1583,10 @@ export default function Index({
                 <SendScheduleEmailModal
                     show={showEmailModal}
                     onClose={() => setShowEmailModal(false)}
-                    type={selectedSchedules.length > 0 ? "bulk" : "general"}
-                    recipients={
-                        selectedSchedules.length > 0
-                            ? schedules.data.filter((s) =>
-                                  selectedSchedules.includes(s.id)
-                              )
-                            : schedules.data
-                    }
-                    startDate={
-                        filters.week_start ||
-                        new Date().toISOString().split("T")[0]
-                    }
-                    endDate={
-                        filters.week_end ||
-                        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-                            .toISOString()
-                            .split("T")[0]
-                    }
+                    startDate={startDate}
+                    endDate={endDate}
+                    teachers={teachers}
+                    classes={classes}
                 />
             )}
 

@@ -408,7 +408,7 @@ export default function Index({ academicYears, auth }) {
                                                             0 && (
                                                             <Link
                                                                 href={route(
-                                                                    "academic.schedules.index",
+                                                                    "planning.index",
                                                                     {
                                                                         academic_year_id:
                                                                             year.id,

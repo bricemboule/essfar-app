@@ -89,7 +89,7 @@ class User extends Authenticatable
     }
 
     
-    public function teacherSchedules()
+    public function schedules()
     {
         return $this->hasMany(Schedule::class, 'teacher_id');
     }

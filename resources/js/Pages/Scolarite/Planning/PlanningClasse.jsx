@@ -404,7 +404,18 @@ export default function PlanningClasse({
                                     <button
                                         type="button"
                                         className="btn btn-info"
-                                        onClick={sendScheduleEmail}
+                                        onClick={() => {
+                                            router.post(
+                                                route("planning.send-email"),
+                                                {
+                                                    type: "class",
+                                                    class_id: schoolClass.id,
+                                                    start_date: startDate,
+                                                    end_date: endDate,
+                                                    include_pdf: true,
+                                                }
+                                            );
+                                        }}
                                     >
                                         <i className="fas fa-envelope mr-1"></i>
                                         Envoyer aux étudiants

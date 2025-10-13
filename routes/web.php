@@ -114,7 +114,7 @@ Route::middleware(['auth', 'role:chef_scolarite,admin'])->prefix('scolarite')->n
         ->name('dashboard');
     
     // Gestion complète des plannings
-    Route::resource('schedules', ScheduleController::class)->except(['show']);
+    Route::resource('planning', ScheduleController::class)->except(['show']);
     Route::get('/schedules/{schedule}', [ScheduleController::class, 'show'])->name('schedules.show');
     
     // Rapports
@@ -223,7 +223,7 @@ Route::middleware(['auth'])->group(function () {
     // Gestion des plannings (permissions spéciales)
  Route::middleware(['auth', 'permission:manage_schedules'])->prefix('planning')->name('planning.')->group(function () {
     
-    Route::resource('/', ScheduleController::class)->parameters([
+    Route::resource('schedules', ScheduleController::class)->parameters([
         '' => 'schedule'
     ])->names([
         'index' => 'index',

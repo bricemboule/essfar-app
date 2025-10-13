@@ -13,14 +13,16 @@ use Inertia\Inertia;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\TeacherScheduleMail;
-use App\Mail\ClassScheduleMail;
+use App\Mail\EnseignantPlanningMail;
+use App\Mail\ClassPlanningMail;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Jobs\SendClassPlanningJob;
 
 class ScheduleController extends Controller
 {
     public function index(Request $request)
     {
+        
         $query = Schedule::with([
             'course', 
             'teacher', 
@@ -207,6 +209,7 @@ class ScheduleController extends Controller
     // Marquer une séance comme terminée
 public function markCompleted(Request $request, Schedule $schedule)
 {
+    
     $request->validate([
         'duration_hours' => 'required|numeric|min:0',
         'notes' => 'nullable|string|max:500'
@@ -427,41 +430,52 @@ public function teacherEarningsReport(Request $request)
 
 
     // Envoyer planning par email
-    public function sendScheduleEmail(Request $request)
-    {
-        $request->validate([
-            'type' => 'required|in:teacher,class,bulk',
-            'teacher_id' => 'required_if:type,teacher|exists:users,id',
-            'class_id' => 'required_if:type,class|exists:school_classes,id',
-            'schedule_ids' => 'required_if:type,bulk|array',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date',
-            'options' => 'nullable|array',
-        ]);
+   public function sendScheduleEmail(Request $request)
+{
 
-        try {
-            switch ($request->type) {
-                case 'teacher':
-                    $this->sendToTeacher($request->all());
-                    $message = 'Planning envoyé à l\'enseignant avec succès.';
-                    break;
-                
-                case 'class':
-                    $this->sendToClass($request->all());
-                    $message = 'Planning envoyé aux étudiants de la classe.';
-                    break;
-                
-                case 'bulk':
-                    $this->sendToBulk($request->all());
-                    $message = 'Planning envoyé aux enseignants concernés.';
-                    break;
-            }
+    
+    $request->validate([
+        'type' => 'required|in:teacher,class,all_teachers,all_classes',
+        'teacher_id' => 'required_if:type,teacher|exists:users,id',
+        'class_id' => 'required_if:type,class|exists:school_classes,id',
+        'start_date' => 'required|date',
+        'end_date' => 'required|date',
+        'include_pdf' => 'boolean',
+        'message' => 'nullable|string|max:1000',
+    ]);
 
-            return back()->with('success', $message);
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Erreur lors de l\'envoi : ' . $e->getMessage()]);
+    
+
+    try {
+        $sent = 0;
+        
+        switch ($request->type) {
+            case 'teacher':
+                
+                $this->sendToTeacher($request->teacher_id, $request->all());
+                $sent = 1;
+                break;
+            
+            case 'class':
+                
+                $sent = $this->sendToClass($request->class_id, $request->all());
+                break;
+            
+            case 'all_teachers':
+                $sent = $this->sendToAllTeachers($request->all());
+                break;
+            
+            case 'all_classes':
+                $sent = $this->sendToAllClasses($request->all());
+                break;
         }
+
+        return back()->with('success', "Planning envoyé avec succès à {$sent} destinataire(s).");
+    } catch (\Exception $e) {
+        \Log::error('Erreur envoi planning: ' . $e->getMessage());
+        return back()->withErrors(['error' => 'Erreur lors de l\'envoi : ' . $e->getMessage()]);
     }
+}
 
     // Méthodes privées
     private function createRecurringSchedules(Schedule $originalSchedule, AcademicYear $academicYear)
@@ -497,33 +511,187 @@ public function teacherEarningsReport(Request $request)
         }
     }
 
-    private function sendToTeacher($data)
-    {
-        $teacher = User::findOrFail($data['teacher_id']);
-        $schedules = Schedule::forTeacher($teacher->id)
-            ->forWeek($data['start_date'], $data['end_date'])
-            ->with(['course', 'schoolClass', 'classroom'])
-            ->get();
+ private function sendToTeacher($teacherId, $data)
+{
+    $teacher = User::findOrFail($teacherId);
+    $schedules = Schedule::forTeacher($teacher->id)
+        ->forWeek($data['start_date'], $data['end_date'])
+        ->with(['course', 'schoolClass', 'classroom'])
+        ->orderBy('start_time')
+        ->get();
 
-        Mail::to($teacher->email)->send(
-            new TeacherScheduleMail($teacher, $schedules, $data)
-        );
+    if ($schedules->isEmpty()) {
+        return 0;
     }
 
-    private function sendToClass($data)
-    {
-        $class = SchoolClass::with('students')->findOrFail($data['school_class_id']);
-        $schedules = Schedule::forClass($class->id)
-            ->forWeek($data['start_date'], $data['end_date'])
-            ->with(['course', 'teacher', 'classroom'])
-            ->get();
+    $pdf = null;
+    if ($data['include_pdf'] ?? true) {
+        $pdf = $this->generateTeacherPdf($teacher, $schedules, $data);
+    }
 
-        foreach ($class->students as $student) {
-            Mail::to($student->email)->send(
-                new ClassScheduleMail($student, $class, $schedules, $data)
-            );
+    Mail::to($teacher->email)->send(
+        new TeacherScheduleMail($teacher, $schedules, $data, $pdf)
+    );
+    
+    return 1;
+}
+
+
+
+private function sendToClass($classId, array $data): void
+{
+    $class = SchoolClass::findOrFail($classId);
+
+    $schedules = Schedule::query()
+        ->forClass($class->id)
+        ->forWeek($data['start_date'], $data['end_date'])
+        ->get();
+
+    if ($schedules->isEmpty()) {
+        \Log::info("Aucun planning trouvé pour la classe {$class->name}");
+        return;
+    }
+
+    // Génère le PDF et enregistre-le sur le disque
+    $pdfPath = null;
+    if (!empty($data['include_pdf'])) {
+        $pdf = $this->generateClassPdf($class, $schedules, $data);
+        $pdfPath = storage_path('app/public/planning/' . uniqid('planning_') . '.pdf');
+        file_put_contents($pdfPath, $pdf);
+    }
+
+  
+    dispatch(new SendClassPlanningJob($class->id, $data, $pdfPath));
+}
+
+private function sendToAllTeachers(array $data): int
+{
+    \Log::info("Début d'envoi des plannings à tous les enseignants pour la période {$data['start_date']} - {$data['end_date']}");
+
+    
+    $teachers = User::where('role', 'enseignant')
+        ->whereHas('schedules', function ($q) use ($data) {
+            $q->forWeek($data['start_date'], $data['end_date']);
+        })
+        ->get();
+
+    if ($teachers->isEmpty()) {
+        \Log::info("Aucun enseignant avec emploi du temps trouvé pour cette période.");
+        return 0;
+    }
+
+    $sent = 0;
+
+    foreach ($teachers as $teacher) {
+        if (empty($teacher->email)) {
+            \Log::warning("Enseignant sans email : {$teacher->id} ({$teacher->name})");
+            continue;
+        }
+
+        try {
+            // Récupérer les cours de l'enseignant pour la période AVEC relations
+            $schedules = Schedule::query()
+                ->forTeacher($teacher->id)
+                ->forWeek($data['start_date'], $data['end_date'])
+                ->with(['course', 'classroom', 'schoolClass']) // IMPORTANT
+                ->orderBy('start_time')
+                ->get();
+
+            if ($schedules->isEmpty()) {
+                \Log::info("Aucun planning pour {$teacher->name}");
+                continue;
+            }
+
+            // Génération du PDF (facultatif)
+            $pdfPath = null;
+            if (!empty($data['include_pdf'])) {
+                try {
+                    $pdf = $this->generateTeacherPdf($teacher, $schedules, $data);
+                    
+                    // Créer un nom de fichier unique
+                    $filename = 'teacher_' . $teacher->id . '_' . time() . '_' . uniqid() . '.pdf';
+                    $pdfPath = storage_path('app/public/planning/' . $filename);
+                    
+                    // S'assurer que le dossier existe
+                    $directory = dirname($pdfPath);
+                    if (!is_dir($directory)) {
+                        mkdir($directory, 0755, true);
+                    }
+                    
+                    file_put_contents($pdfPath, $pdf);
+                    \Log::info("PDF généré : {$pdfPath}");
+                } catch (\Exception $e) {
+                    \Log::error("Erreur génération PDF pour {$teacher->name}: " . $e->getMessage());
+                    $pdfPath = null;
+                }
+            }
+
+            // Dispatch du job avec le chemin du PDF
+            dispatch(new \App\Jobs\SendTeacherPlanningJob($teacher->id, $data, $pdfPath));
+
+            $sent++;
+        } catch (\Throwable $e) {
+            \Log::error("Erreur envoi planning à {$teacher->email}: " . $e->getMessage(), [
+                'teacher_id' => $teacher->id,
+            ]);
         }
     }
+
+    \Log::info("Fin d'envoi aux enseignants : {$sent} jobs dispatchés.");
+
+    return $sent;
+}
+
+
+
+private function generateTeacherPdf($teacher, $schedules, $data)
+{
+    $pdf = Pdf::loadView('planning.teacher-schedule-pdf', [
+        'teacher' => $teacher,
+        'schedules' => $schedules,
+        'startDate' => $data['start_date'],
+        'endDate' => $data['end_date'],
+        'generatedDate' => now()->format('d/m/Y H:i'),
+    ])->setPaper('a4', 'portrait');
+
+    return $pdf->output();
+}
+
+private function generateClassPdf($class, $schedules, $data)
+{
+    $pdf = Pdf::loadView('planning.class-schedule-pdf', [
+        'class' => $class,
+        'schedules' => $schedules,
+        'startDate' => $data['start_date'],
+        'endDate' => $data['end_date'],
+        'generatedDate' => now()->format('d/m/Y H:i'),
+    ])->setPaper('a4', 'landscape');
+
+    return $pdf->output();
+}
+
+
+
+private function sendToAllClasses($data)
+{
+    $academicYear = AcademicYear::active()->first();
+    $classes = SchoolClass::where('academic_year_id', $academicYear->id)
+        ->whereHas('schedules', function($q) use ($data) {
+            $q->forWeek($data['start_date'], $data['end_date']);
+        })
+        ->get();
+
+    $sent = 0;
+    foreach ($classes as $class) {
+        try {
+            $sent += $this->sendToClass($class->id, $data);
+        } catch (\Exception $e) {
+            \Log::error("Erreur envoi classe {$class->name}: " . $e->getMessage());
+        }
+    }
+    
+    return $sent;
+}
 
     private function sendToBulk($data)
     {
