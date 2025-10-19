@@ -286,12 +286,7 @@
                 <strong>📎 Document PDF joint</strong><br>
                 Un fichier PDF contenant l'emploi du temps complet est joint à cet email.
             </p>
-            <p style="margin-top: 15px;">
-                Pensez à consulter régulièrement votre emploi du temps pour ne manquer aucun cours !
-            </p>
-            <p style="margin-top: 15px; font-size: 12px; color: #999;">
-                Email généré automatiquement le {{ now()->format('d/m/Y à H:i') }}
-            </p>
+          
         </div>
     </div>
 </body>

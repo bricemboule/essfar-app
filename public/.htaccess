@@ -3,6 +3,10 @@
         Options -MultiViews -Indexes
     </IfModule>
 
+    <IfModule mod_headers.c>
+        Header set Content-Security-Policy "script-src 'self' 'unsafe-eval'"
+    </IfModule>
+
     RewriteEngine On
 
     # Handle Authorization Header

@@ -255,9 +255,7 @@
             <p style="margin-top: 15px;">
                 Pour toute question ou modification, veuillez contacter le service scolarité.
             </p>
-            <p style="margin-top: 15px; font-size: 12px; color: #999;">
-                Email généré automatiquement le {{ now()->format('d/m/Y à H:i') }}
-            </p>
+          
         </div>
     </div>
 </body>

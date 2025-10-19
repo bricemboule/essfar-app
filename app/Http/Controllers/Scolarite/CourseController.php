@@ -1,7 +1,9 @@
 <?php
 // app/Http/Controllers/CourseController.php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Scolarite;
+
+use App\Http\Controllers\Controller;
 
 use App\Models\Course;
 use App\Models\AcademicYear;

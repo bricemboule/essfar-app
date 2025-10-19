@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Scolarite;
+
+use App\Http\Controllers\Controller;
 
 use App\Models\Classroom;
 use Illuminate\Http\Request;

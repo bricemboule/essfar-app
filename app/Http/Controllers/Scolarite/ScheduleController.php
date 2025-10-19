@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Scolarite;
 
+use App\Http\Controllers\Controller;
 use App\Models\Schedule;
 use App\Models\Course;
 use App\Models\SchoolClass;

@@ -15,6 +15,10 @@ export default function Index({ students, classes, filters, auth }) {
     const [bulkAction, setBulkAction] = useState("");
     const [showExportModal, setShowExportModal] = useState(false);
     const [exportFormat, setExportFormat] = useState("excel");
+    const [showImportModal, setShowImportModal] = useState(false);
+    const [importFile, setImportFile] = useState(null);
+    const [importErrors, setImportErrors] = useState([]);
+    const [importSuccess, setImportSuccess] = useState(null);
 
     const { delete: destroy, processing, post } = useForm();
 
@@ -32,6 +36,71 @@ export default function Index({ students, classes, filters, auth }) {
                 replace: true,
             }
         );
+    };
+
+    const handleImportFile = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Vérifier le type de fichier
+            const validTypes = [
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "application/vnd.ms-excel",
+                "text/csv",
+            ];
+
+            if (!validTypes.includes(file.type)) {
+                alert(
+                    "Veuillez sélectionner un fichier Excel (.xlsx, .xls) ou CSV"
+                );
+                e.target.value = null; // Reset input
+                return;
+            }
+
+            // Vérifier la taille (5 Mo max)
+            if (file.size > 5 * 1024 * 1024) {
+                alert("Le fichier ne doit pas dépasser 5 Mo");
+                e.target.value = null;
+                return;
+            }
+
+            setImportFile(file);
+            setImportErrors([]);
+            setImportSuccess(null);
+        }
+    };
+
+    const handleImport = () => {
+        if (!importFile) {
+            alert("Veuillez sélectionner un fichier");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", importFile);
+
+        router.post(route("academic.etudiants.import"), formData, {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowImportModal(false);
+                setImportFile(null);
+                setImportErrors([]);
+                setImportSuccess(null);
+            },
+            onError: (errors) => {
+                if (errors.import_errors) {
+                    setImportErrors(errors.import_errors);
+                } else if (errors.error) {
+                    alert(errors.error);
+                } else if (errors.file) {
+                    alert(errors.file[0]);
+                }
+            },
+        });
+    };
+
+    const downloadTemplate = () => {
+        window.location.href = route("academic.etudiants.template");
     };
 
     const clearFilters = () => {
@@ -237,8 +306,18 @@ export default function Index({ students, classes, filters, auth }) {
                                 </Link>
                             </div>
                             <div className="col-md-3">
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary btn-block btn-lg"
+                                    onClick={() => setShowImportModal(true)}
+                                >
+                                    <i className="fas fa-file-excel mr-2"></i>
+                                    Importer depuis Excel
+                                </button>
+                            </div>
+                            <div className="col-md-3">
                                 <Link
-                                    href={route("academic.etudiants.create")}
+                                    href={route("scolarite.attendances.index")}
                                     className="btn btn-primary btn-block btn-lg"
                                 >
                                     <i className="fas fa-calendar-check mr-2"></i>
@@ -247,7 +326,7 @@ export default function Index({ students, classes, filters, auth }) {
                             </div>
                             <div className="col-md-3">
                                 <Link
-                                    href={route("academic.etudiants.create")}
+                                    href={route("scolarite.resources.index")}
                                     className="btn btn-info btn-block btn-lg"
                                 >
                                     <i className="fas fa-folder-open mr-2"></i>
@@ -1109,6 +1188,250 @@ export default function Index({ students, classes, filters, auth }) {
                                         <>
                                             <i className="fas fa-check mr-1"></i>
                                             Appliquer l'action
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showImportModal && (
+                <div
+                    className="modal fade show d-block"
+                    style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+                >
+                    <div className="modal-dialog modal-lg">
+                        <div className="modal-content">
+                            <div className="modal-header bg-secondary">
+                                <h4 className="modal-title">
+                                    <i className="fas fa-file-excel mr-2"></i>
+                                    Importer des étudiants depuis Excel
+                                </h4>
+                                <button
+                                    type="button"
+                                    className="close"
+                                    onClick={() => {
+                                        setShowImportModal(false);
+                                        setImportFile(null);
+                                        setImportErrors([]);
+                                        setImportSuccess(null);
+                                    }}
+                                >
+                                    <span>&times;</span>
+                                </button>
+                            </div>
+                            <div className="modal-body">
+                                {/* Instructions */}
+                                <div className="alert alert-info">
+                                    <h6>
+                                        <i className="fas fa-info-circle mr-1"></i>
+                                        Instructions :
+                                    </h6>
+                                    <ol className="mb-0 small">
+                                        <li>
+                                            Téléchargez le modèle Excel
+                                            ci-dessous
+                                        </li>
+                                        <li>
+                                            Remplissez les informations des
+                                            étudiants
+                                        </li>
+                                        <li>Importez le fichier rempli</li>
+                                        <li>
+                                            Vérifiez les erreurs éventuelles
+                                        </li>
+                                    </ol>
+                                </div>
+
+                                {/* Bouton de téléchargement du template */}
+                                <div className="text-center mb-4">
+                                    <button
+                                        type="button"
+                                        className="btn btn-success btn-lg"
+                                        onClick={downloadTemplate}
+                                    >
+                                        <i className="fas fa-download mr-2"></i>
+                                        Télécharger le modèle Excel
+                                    </button>
+                                    <p className="text-muted mt-2 small">
+                                        Le modèle contient toutes les colonnes
+                                        nécessaires avec des exemples
+                                    </p>
+                                </div>
+
+                                <hr />
+
+                                {/* Upload du fichier */}
+                                <div className="form-group">
+                                    <label>
+                                        Sélectionner le fichier Excel rempli
+                                        <span className="text-danger">*</span>
+                                    </label>
+                                    <div className="custom-file">
+                                        <input
+                                            type="file"
+                                            className="custom-file-input"
+                                            id="importFile"
+                                            accept=".xlsx,.xls,.csv"
+                                            onChange={handleImportFile}
+                                        />
+                                        <label
+                                            className="custom-file-label"
+                                            htmlFor="importFile"
+                                        >
+                                            {importFile
+                                                ? importFile.name
+                                                : "Choisir un fichier..."}
+                                        </label>
+                                    </div>
+                                    <small className="form-text text-muted">
+                                        Formats acceptés : .xlsx, .xls, .csv
+                                        (taille max: 5 Mo)
+                                    </small>
+                                </div>
+
+                                {/* Colonnes requises */}
+                                <div className="alert alert-warning">
+                                    <h6>
+                                        <i className="fas fa-exclamation-triangle mr-1"></i>
+                                        Colonnes obligatoires :
+                                    </h6>
+                                    <div className="row">
+                                        <div className="col-md-6">
+                                            <ul className="small mb-0">
+                                                <li>
+                                                    <strong>name</strong> - Nom
+                                                    et prénom
+                                                </li>
+                                                <li>
+                                                    <strong>email</strong> -
+                                                    Email unique
+                                                </li>
+                                                <li>
+                                                    <strong>
+                                                        date_naissance
+                                                    </strong>{" "}
+                                                    - Format: JJ/MM/AAAA
+                                                </li>
+                                                <li>
+                                                    <strong>
+                                                        lieu_naissance
+                                                    </strong>{" "}
+                                                    - Lieu de naissance
+                                                </li>
+                                                <li>
+                                                    <strong>sexe</strong> - M ou
+                                                    F
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div className="col-md-6">
+                                            <ul className="small mb-0">
+                                                <li>
+                                                    <strong>
+                                                        school_class_id
+                                                    </strong>{" "}
+                                                    - ID de la classe
+                                                </li>
+                                                <li>
+                                                    <strong>
+                                                        academic_year_id
+                                                    </strong>{" "}
+                                                    - ID année académique
+                                                </li>
+                                            </ul>
+                                            <p className="small text-info mt-2 mb-0">
+                                                <i className="fas fa-lightbulb mr-1"></i>
+                                                Les autres colonnes sont
+                                                optionnelles
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Erreurs d'import */}
+                                {importErrors.length > 0 && (
+                                    <div className="alert alert-danger">
+                                        <h6>
+                                            <i className="fas fa-times-circle mr-1"></i>
+                                            Erreurs détectées lors de l'import :
+                                        </h6>
+                                        <div
+                                            className="import-errors"
+                                            style={{
+                                                maxHeight: "200px",
+                                                overflowY: "auto",
+                                            }}
+                                        >
+                                            <table className="table table-sm table-bordered mb-0">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Ligne</th>
+                                                        <th>Erreur</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {importErrors.map(
+                                                        (error, index) => (
+                                                            <tr key={index}>
+                                                                <td>
+                                                                    {error.row}
+                                                                </td>
+                                                                <td>
+                                                                    {
+                                                                        error.message
+                                                                    }
+                                                                </td>
+                                                            </tr>
+                                                        )
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Succès */}
+                                {importSuccess && (
+                                    <div className="alert alert-success">
+                                        <h6>
+                                            <i className="fas fa-check-circle mr-1"></i>
+                                            Import réussi !
+                                        </h6>
+                                        <p className="mb-0">{importSuccess}</p>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="modal-footer justify-content-between">
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    onClick={() => {
+                                        setShowImportModal(false);
+                                        setImportFile(null);
+                                        setImportErrors([]);
+                                        setImportSuccess(null);
+                                    }}
+                                >
+                                    Annuler
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-primary"
+                                    onClick={handleImport}
+                                    disabled={!importFile || processing}
+                                >
+                                    {processing ? (
+                                        <>
+                                            <i className="fas fa-spinner fa-spin mr-1"></i>
+                                            Import en cours...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <i className="fas fa-upload mr-1"></i>
+                                            Importer les étudiants
                                         </>
                                     )}
                                 </button>
