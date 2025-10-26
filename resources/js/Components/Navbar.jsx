@@ -90,7 +90,7 @@ export default function Navbar() {
                 {/* 🔹 Bouton Se connecter en desktop */}
                 <div className="hidden md:flex">
                     <Link
-                        href="/login"
+                        href={route("login")}
                         className="flex items-center gap-2 bg-[#0F8AB1] text-white px-4 py-2 rounded-lg hover:bg-[#C82327] transition"
                     >
                         <LogIn size={18} /> Se connecter
@@ -163,7 +163,7 @@ export default function Navbar() {
                     {/* 🔹 Bouton Se connecter en mobile */}
                     <div className="mt-8">
                         <Link
-                            href="/login"
+                            href={route("login")}
                             className="flex items-center gap-2 bg-[#0F8AB1] text-white px-4 py-2 rounded-lg hover:bg-[#0D7695] transition"
                         >
                             <LogIn size={18} /> Se connecter

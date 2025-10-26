@@ -102,6 +102,16 @@ class HandleInertiaRequests extends Middleware
                 'icon' => 'fas fa-chart-line',
             ],
             [
+                'title' => 'Mes Absences et retards',
+                'url' => route('etudiant.attendances.index'),
+                'icon' => 'fas fa-chart-line',
+            ],
+            [
+                'title' => 'Mes Documents',
+                'url' => route('etudiant.resources.index'),
+                'icon' => 'fas fa-chart-line',
+            ],
+            [
                 'title' => 'Mon Profil',
                 'url' => route('profile.edit'),
                 'icon' => 'fas fa-user',
@@ -323,21 +333,23 @@ class HandleInertiaRequests extends Middleware
                     ['title' => 'Rôles & Permissions', 'url' => route('admin.roles')],
                 ]
             ],
+
+             [
+                'title' => 'Salles & Ressources',
+                'url' => route('academic.classrooms.index'),
+                'icon' => 'fas fa-door-open',
+            ],
                [
                 'title' => 'Gestion Académique',
                 'icon' => 'fas fa-graduation-cap',
                 'children' => [
                     ['title' => 'Annees Academiques', 'url' => route('academic.years.index')],
                     ['title' => 'Classes', 'url' => route('academic.classes.index')],
-                    ['title' => 'Cours', 'url' => route('academic.courses.index')],
-                    ['title' => 'Inscriptions', 'url' => ""],
+                    ['title' => 'Etudiants', 'url' => route('academic.etudiants.index')],
+                    ['title' => 'Enseignants', 'url' => route('academic.enseignants.index')],
                 ]
             ],
-            [
-                'title' => 'Salles & Ressources',
-                'url' => route('academic.classrooms.index'),
-                'icon' => 'fas fa-door-open',
-            ],
+           
             [
                 'title' => 'Système',
                 'icon' => 'fas fa-server',

@@ -12,7 +12,7 @@ export default function Show({ attendance, canJustify }) {
         };
         return badges[type] || "badge-secondary";
     };
-
+    console.log(attendance);
     const getTypeLabel = (type) => {
         const labels = {
             presence: "Présent",
@@ -39,14 +39,14 @@ export default function Show({ attendance, canJustify }) {
                         <div className="col-sm-6">
                             <ol className="breadcrumb float-sm-right">
                                 <li className="breadcrumb-item">
-                                    <Link href={route("student.dashboard")}>
+                                    <Link href={route("etudiant.dashboard")}>
                                         Dashboard
                                     </Link>
                                 </li>
                                 <li className="breadcrumb-item">
                                     <Link
                                         href={route(
-                                            "student.attendances.index"
+                                            "etudiant.attendances.index"
                                         )}
                                     >
                                         Absences et retards
@@ -130,7 +130,7 @@ export default function Show({ attendance, canJustify }) {
                                                     Matière :
                                                 </strong>
                                                 <br />
-                                                {attendance.subject.name}
+                                                {attendance.course.name}
                                             </p>
                                         </div>
                                         <div className="col-md-6">
@@ -213,7 +213,7 @@ export default function Show({ attendance, canJustify }) {
                                             <div className="mt-3">
                                                 <a
                                                     href={route(
-                                                        "student.attendances.download-justification",
+                                                        "etudiant.attendances.download-justification",
                                                         attendance.id
                                                     )}
                                                     className="btn btn-sm btn-primary"
@@ -313,7 +313,7 @@ export default function Show({ attendance, canJustify }) {
                                 <div className="card-body">
                                     <Link
                                         href={route(
-                                            "student.attendances.index"
+                                            "etudiant.attendances.index"
                                         )}
                                         className="btn btn-secondary"
                                     >
@@ -323,7 +323,7 @@ export default function Show({ attendance, canJustify }) {
                                     {canJustify && (
                                         <Link
                                             href={route(
-                                                "student.attendances.justify-form",
+                                                "etudiant.attendances.justify-form",
                                                 attendance.id
                                             )}
                                             className="btn btn-warning ml-2"

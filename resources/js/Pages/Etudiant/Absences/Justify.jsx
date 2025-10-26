@@ -25,9 +25,12 @@ export default function Justify({ attendance }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route("student.attendances.submit-justification", attendance.id), {
-            forceFormData: true,
-        });
+        post(
+            route("etudiant.attendances.submit-justification", attendance.id),
+            {
+                forceFormData: true,
+            }
+        );
     };
 
     return (
@@ -46,14 +49,14 @@ export default function Justify({ attendance }) {
                         <div className="col-sm-6">
                             <ol className="breadcrumb float-sm-right">
                                 <li className="breadcrumb-item">
-                                    <Link href={route("student.dashboard")}>
+                                    <Link href={route("etudiant.dashboard")}>
                                         Dashboard
                                     </Link>
                                 </li>
                                 <li className="breadcrumb-item">
                                     <Link
                                         href={route(
-                                            "student.attendances.index"
+                                            "etudiant.attendances.index"
                                         )}
                                     >
                                         Absences et retards
@@ -95,7 +98,7 @@ export default function Justify({ attendance }) {
                                             <p>
                                                 <strong>Matière :</strong>
                                                 <br />
-                                                {attendance.subject.name}
+                                                {attendance.course.name}
                                             </p>
                                         </div>
                                         <div className="col-md-4">
@@ -246,7 +249,7 @@ export default function Justify({ attendance }) {
                                     <div className="d-flex justify-content-between">
                                         <Link
                                             href={route(
-                                                "student.attendances.show",
+                                                "etudiant.attendances.show",
                                                 attendance.id
                                             )}
                                             className="btn btn-secondary"

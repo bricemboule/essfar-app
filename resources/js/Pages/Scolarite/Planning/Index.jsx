@@ -33,22 +33,20 @@ export default function Index({
     filters,
     stats,
 }) {
-    const [searchTerm, setSearchTerm] = useState(filters.search || "");
+    const [searchTerm, setSearchTerm] = useState(filters?.search || "");
     const [filterTeacher, setFilterTeacher] = useState(
-        filters.teacher_id || ""
+        filters?.teacher_id || ""
     );
-    const [filterClass, setFilterClass] = useState(filters.class_id || "");
-    const [filterStatus, setFilterStatus] = useState(filters.status || "");
+    const [filterClass, setFilterClass] = useState(filters?.class_id || "");
+    const [filterStatus, setFilterStatus] = useState(filters?.status || "");
     const [viewMode, setViewMode] = useState("list");
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [scheduleToDelete, setScheduleToDelete] = useState(null);
     const [selectedSchedules, setSelectedSchedules] = useState([]);
-    const [showEmailModal, setShowEmailModal] = useState(false);
     const [showCancelModal, setShowCancelModal] = useState(false);
+    const [showEmailModal, setShowEmailModal] = useState(false);
     const [scheduleToCancel, setScheduleToCancel] = useState(null);
     const [cancelReason, setCancelReason] = useState("");
-    const [showBulkModal, setShowBulkModal] = useState(false);
-    const [bulkAction, setBulkAction] = useState("");
     const [showCompletedModal, setShowCompletedModal] = useState(false);
     const [scheduleToComplete, setScheduleToComplete] = useState(null);
     const [startDate, setStartDate] = useState(
@@ -60,12 +58,11 @@ export default function Index({
             .split("T")[0]
     );
     const [completedData, setCompletedData] = useState({
-        hours: 0,
-        minutes: 0,
+        duration_hours: 0,
         notes: "",
     });
 
-    const { delete: destroy, processing, post } = useForm();
+    const { delete: destroy, processing } = useForm();
 
     const handleSearch = () => {
         router.get(
@@ -111,7 +108,7 @@ export default function Index({
 
     const confirmCancel = () => {
         if (scheduleToCancel && cancelReason) {
-            post(
+            router.post(
                 route("planning.cancel", scheduleToCancel.id),
                 { reason: cancelReason },
                 {
@@ -123,41 +120,6 @@ export default function Index({
                 }
             );
         }
-    };
-
-    const toggleScheduleSelection = (scheduleId) => {
-        setSelectedSchedules((prev) =>
-            prev.includes(scheduleId)
-                ? prev.filter((id) => id !== scheduleId)
-                : [...prev, scheduleId]
-        );
-    };
-
-    const handleBulkAction = () => {
-        if (selectedSchedules.length === 0) {
-            alert("Veuillez sélectionner au moins une séance");
-            return;
-        }
-        setShowBulkModal(true);
-    };
-
-    const confirmBulkAction = () => {
-        post(
-            route("planning.bulk-action"),
-            {
-                action: bulkAction,
-                schedule_ids: selectedSchedules,
-                reason: bulkAction === "cancel" ? cancelReason : null,
-            },
-            {
-                onSuccess: () => {
-                    setShowBulkModal(false);
-                    setSelectedSchedules([]);
-                    setBulkAction("");
-                    setCancelReason("");
-                },
-            }
-        );
     };
 
     const markAsCompleted = (schedule) => {
@@ -180,6 +142,7 @@ export default function Index({
 
     const confirmMarkCompleted = () => {
         if (scheduleToComplete) {
+            console.log(scheduleToComplete);
             console.log(completedData.duration_hours);
             router.post(
                 route("planning.mark-completed", scheduleToComplete.id),
@@ -203,8 +166,12 @@ export default function Index({
         }
     };
 
-    const parseUTCDate = (datetime) => {
-        return Date.parse(datetime.split(".")[0] + "Z");
+    const toggleScheduleSelection = (scheduleId) => {
+        setSelectedSchedules((prev) =>
+            prev.includes(scheduleId)
+                ? prev.filter((id) => id !== scheduleId)
+                : [...prev, scheduleId]
+        );
     };
 
     const getStatusBadge = (status) => {
@@ -231,7 +198,6 @@ export default function Index({
         return new Date(datetime).toLocaleTimeString("fr-FR", {
             hour: "2-digit",
             minute: "2-digit",
-            timeZone: "UTC",
         });
     };
 
@@ -241,7 +207,6 @@ export default function Index({
             day: "numeric",
             month: "long",
             year: "numeric",
-            timeZone: "UTC",
         });
     };
 
@@ -265,7 +230,32 @@ export default function Index({
         return days;
     };
 
-    const weekSchedules = groupByDay(schedules.data || []);
+    // Grouper les cours uniques avec comptage des séances
+    const getUniqueSchedules = (schedules) => {
+        const uniqueMap = new Map();
+
+        schedules.forEach((schedule) => {
+            const key = `${schedule.teacher_id}-${schedule.course_id}-${schedule.school_class_id}`;
+
+            if (!uniqueMap.has(key)) {
+                uniqueMap.set(key, {
+                    ...schedule,
+                    sessionCount: 1,
+                    sessions: [schedule],
+                });
+            } else {
+                const existing = uniqueMap.get(key);
+                existing.sessionCount++;
+                existing.sessions.push(schedule);
+                uniqueMap.set(key, existing);
+            }
+        });
+
+        return Array.from(uniqueMap.values());
+    };
+
+    const weekSchedules = groupByDay(schedules?.data || []);
+    const uniqueSchedules = getUniqueSchedules(schedules?.data || []);
 
     return (
         <AdminLayout>
@@ -277,20 +267,8 @@ export default function Index({
                         <div className="col-sm-6">
                             <h1 className="m-0">
                                 <i className="fas fa-calendar-alt mr-2 text-primary"></i>
-                                Gestion des Plannings de Cours
+                                Gestion des Plannings
                             </h1>
-                        </div>
-                        <div className="col-sm-6">
-                            <ol className="breadcrumb float-sm-right">
-                                <li className="breadcrumb-item">
-                                    <Link href={route("scolarite.dashboard")}>
-                                        Dashboard
-                                    </Link>
-                                </li>
-                                <li className="breadcrumb-item active">
-                                    Plannings
-                                </li>
-                            </ol>
                         </div>
                     </div>
                 </div>
@@ -304,7 +282,7 @@ export default function Index({
                             <div className="small-box bg-info">
                                 <div className="inner">
                                     <h3>{stats?.total || 0}</h3>
-                                    <p>Total des séances</p>
+                                    <p>Total séances</p>
                                 </div>
                                 <div className="icon">
                                     <i className="fas fa-calendar"></i>
@@ -315,7 +293,7 @@ export default function Index({
                             <div className="small-box bg-success">
                                 <div className="inner">
                                     <h3>{stats?.completed || 0}</h3>
-                                    <p>Séances terminées</p>
+                                    <p>Terminées</p>
                                 </div>
                                 <div className="icon">
                                     <i className="fas fa-check-circle"></i>
@@ -326,7 +304,7 @@ export default function Index({
                             <div className="small-box bg-warning">
                                 <div className="inner">
                                     <h3>{stats?.upcoming || 0}</h3>
-                                    <p>Séances à venir</p>
+                                    <p>À venir</p>
                                 </div>
                                 <div className="icon">
                                     <i className="fas fa-clock"></i>
@@ -337,7 +315,7 @@ export default function Index({
                             <div className="small-box bg-danger">
                                 <div className="inner">
                                     <h3>{stats?.cancelled || 0}</h3>
-                                    <p>Séances annulées</p>
+                                    <p>Annulées</p>
                                 </div>
                                 <div className="icon">
                                     <i className="fas fa-times-circle"></i>
@@ -346,87 +324,6 @@ export default function Index({
                         </div>
                     </div>
 
-                    {/* Accès rapide aux plannings */}
-                    <div className="row mb-4">
-                        <div className="col-md-6">
-                            <Card
-                                title="Planning Enseignants"
-                                icon="fas fa-user-tie"
-                                className="card-outline card-info"
-                            >
-                                <div className="form-group mb-2">
-                                    <select
-                                        className="form-control"
-                                        onChange={(e) => {
-                                            if (e.target.value) {
-                                                router.visit(
-                                                    route(
-                                                        "planning.teacher",
-                                                        e.target.value
-                                                    )
-                                                );
-                                            }
-                                        }}
-                                        defaultValue=""
-                                    >
-                                        <option value="">
-                                            -- Sélectionner un enseignant --
-                                        </option>
-                                        {teachers.map((teacher) => (
-                                            <option
-                                                key={teacher.id}
-                                                value={teacher.id}
-                                            >
-                                                {teacher.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <p className="text-muted mb-0 small">
-                                    <i className="fas fa-info-circle mr-1"></i>
-                                    Accédez au planning détaillé d'un enseignant
-                                </p>
-                            </Card>
-                        </div>
-                        <div className="col-md-6">
-                            <Card
-                                title="Planning Classes"
-                                icon="fas fa-users"
-                                className="card-outline card-success"
-                            >
-                                <div className="form-group mb-2">
-                                    <select
-                                        className="form-control"
-                                        onChange={(e) => {
-                                            if (e.target.value) {
-                                                router.visit(
-                                                    route(
-                                                        "planning.class",
-                                                        e.target.value
-                                                    )
-                                                );
-                                            }
-                                        }}
-                                        defaultValue=""
-                                    >
-                                        <option value="">
-                                            -- Sélectionner une classe --
-                                        </option>
-                                        {classes.map((cls) => (
-                                            <option key={cls.id} value={cls.id}>
-                                                {cls.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <p className="text-muted mb-0 small">
-                                    <i className="fas fa-info-circle mr-1"></i>
-                                    Accédez à l'emploi du temps d'une classe
-                                </p>
-                            </Card>
-                        </div>
-                    </div>
-                    {/* Actions principales */}
                     <Card
                         title="Actions rapides"
                         icon="fas fa-tools"
@@ -471,108 +368,62 @@ export default function Index({
                                 </button>
                             </div>
                         </div>
-
                         <div className="row mt-3">
-                            <div className="col-md-12">
-                                <div className="col-md-3">
-                                    <button
-                                        type="button"
-                                        className="btn btn-success btn-block btn-lg"
-                                        onClick={() => setShowEmailModal(true)}
-                                    >
-                                        <i className="fas fa-envelope mr-2"></i>
-                                        Envoyer plannings
-                                    </button>
-                                </div>
+                            <div className="col-md-3">
+                                <button
+                                    type="button"
+                                    className="btn btn-success btn-block btn-lg"
+                                    onClick={() => setShowEmailModal(true)}
+                                >
+                                    <i className="fas fa-envelope mr-2"></i>
+                                    Envoyer plannings
+                                </button>
                             </div>
                         </div>
                     </Card>
 
                     {/* Filtres */}
-                    <Card
-                        title="Recherche et filtres"
-                        icon="fas fa-filter"
-                        className="mb-4"
-                    >
+                    <Card title="Filtres" icon="fas fa-filter" className="mb-4">
                         <div className="row">
                             <div className="col-md-3">
                                 <div className="form-group">
                                     <label>Enseignant</label>
-                                    <div className="input-group">
-                                        <select
-                                            className="form-control"
-                                            value={filterTeacher}
-                                            onChange={(e) =>
-                                                setFilterTeacher(e.target.value)
-                                            }
-                                        >
-                                            <option value="">
-                                                Tous les enseignants
+                                    <select
+                                        className="form-control"
+                                        value={filterTeacher}
+                                        onChange={(e) =>
+                                            setFilterTeacher(e.target.value)
+                                        }
+                                    >
+                                        <option value="">Tous</option>
+                                        {teachers?.map((teacher) => (
+                                            <option
+                                                key={teacher.id}
+                                                value={teacher.id}
+                                            >
+                                                {teacher.name}
                                             </option>
-                                            {teachers.map((teacher) => (
-                                                <option
-                                                    key={teacher.id}
-                                                    value={teacher.id}
-                                                >
-                                                    {teacher.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        {filterTeacher && (
-                                            <div className="input-group-append">
-                                                <Link
-                                                    href={route(
-                                                        "planning.teacher",
-                                                        filterTeacher
-                                                    )}
-                                                    className="btn btn-info"
-                                                    title="Voir le planning de cet enseignant"
-                                                >
-                                                    <i className="fas fa-eye"></i>
-                                                </Link>
-                                            </div>
-                                        )}
-                                    </div>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
                             <div className="col-md-3">
                                 <div className="form-group">
                                     <label>Classe</label>
-                                    <div className="input-group">
-                                        <select
-                                            className="form-control"
-                                            value={filterClass}
-                                            onChange={(e) =>
-                                                setFilterClass(e.target.value)
-                                            }
-                                        >
-                                            <option value="">
-                                                Toutes les classes
+                                    <select
+                                        className="form-control"
+                                        value={filterClass}
+                                        onChange={(e) =>
+                                            setFilterClass(e.target.value)
+                                        }
+                                    >
+                                        <option value="">Toutes</option>
+                                        {classes?.map((cls) => (
+                                            <option key={cls.id} value={cls.id}>
+                                                {cls.name}
                                             </option>
-                                            {classes.map((cls) => (
-                                                <option
-                                                    key={cls.id}
-                                                    value={cls.id}
-                                                >
-                                                    {cls.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        {filterClass && (
-                                            <div className="input-group-append">
-                                                <Link
-                                                    href={route(
-                                                        "planning.class",
-                                                        filterClass
-                                                    )}
-                                                    className="btn btn-info"
-                                                    title="Voir le planning de cette classe"
-                                                >
-                                                    <i className="fas fa-eye"></i>
-                                                </Link>
-                                            </div>
-                                        )}
-                                    </div>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
                             <div className="col-md-3">
@@ -585,9 +436,7 @@ export default function Index({
                                             setFilterStatus(e.target.value)
                                         }
                                     >
-                                        <option value="">
-                                            Tous les statuts
-                                        </option>
+                                        <option value="">Tous</option>
                                         <option value="scheduled">
                                             Programmé
                                         </option>
@@ -597,427 +446,251 @@ export default function Index({
                                         <option value="cancelled">
                                             Annulé
                                         </option>
-                                        <option value="rescheduled">
-                                            Reporté
-                                        </option>
                                     </select>
                                 </div>
                             </div>
                             <div className="col-md-3 d-flex align-items-end">
-                                <div className="form-group mb-0 w-100">
-                                    <div className="btn-group w-100">
-                                        <button
-                                            type="button"
-                                            className="btn btn-primary"
-                                            onClick={handleSearch}
-                                        >
-                                            <i className="fas fa-search mr-1"></i>
-                                            Rechercher
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="btn btn-outline-secondary"
-                                            onClick={clearFilters}
-                                        >
-                                            <i className="fas fa-times mr-1"></i>
-                                            Reset
-                                        </button>
-                                    </div>
+                                <div className="btn-group w-100">
+                                    <button
+                                        className="btn btn-primary"
+                                        onClick={handleSearch}
+                                    >
+                                        <i className="fas fa-search mr-1"></i>
+                                        Rechercher
+                                    </button>
+                                    <button
+                                        className="btn btn-secondary"
+                                        onClick={clearFilters}
+                                    >
+                                        <i className="fas fa-times mr-1"></i>
+                                        Reset
+                                    </button>
                                 </div>
                             </div>
                         </div>
-
-                        {/* Sélection multiple et actions */}
                         <div className="row mt-3">
-                            <div className="col-md-6">
-                                {selectedSchedules.length > 0 && (
-                                    <>
-                                        <button
-                                            type="button"
-                                            className="btn btn-warning mr-2"
-                                            onClick={handleBulkAction}
-                                        >
-                                            <i className="fas fa-edit mr-1"></i>
-                                            Actions groupées (
-                                            {selectedSchedules.length})
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="btn btn-info mr-2"
-                                            onClick={() =>
-                                                setShowEmailModal(true)
-                                            }
-                                        >
-                                            <i className="fas fa-envelope mr-1"></i>
-                                            Envoyer sélection
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-                            <div className="col-md-6 text-right">
-                                {selectedSchedules.length > 0 && (
-                                    <span className="badge badge-primary badge-lg">
-                                        {selectedSchedules.length} séance(s)
-                                        sélectionnée(s)
-                                    </span>
-                                )}
-                                <div className="row mt-3">
-                                    <div className="col-md-12">
-                                        <div className="btn-group">
-                                            <button
-                                                type="button"
-                                                className={`btn ${
-                                                    viewMode === "list"
-                                                        ? "btn-primary"
-                                                        : "btn-outline-primary"
-                                                }`}
-                                                onClick={() =>
-                                                    setViewMode("list")
-                                                }
-                                            >
-                                                <i className="fas fa-list mr-1"></i>
-                                                Liste
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className={`btn ${
-                                                    viewMode === "week"
-                                                        ? "btn-primary"
-                                                        : "btn-outline-primary"
-                                                }`}
-                                                onClick={() =>
-                                                    setViewMode("week")
-                                                }
-                                            >
-                                                <i className="fas fa-calendar-week mr-1"></i>
-                                                Semaine
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className={`btn ${
-                                                    viewMode === "calendar"
-                                                        ? "btn-primary"
-                                                        : "btn-outline-primary"
-                                                }`}
-                                                onClick={() =>
-                                                    setViewMode("calendar")
-                                                }
-                                            >
-                                                <i className="fas fa-calendar mr-1"></i>
-                                                Calendrier
-                                            </button>
-                                        </div>
-                                    </div>
+                            <div className="col-md-12">
+                                <div className="btn-group">
+                                    <button
+                                        className={`btn ${
+                                            viewMode === "list"
+                                                ? "btn-primary"
+                                                : "btn-outline-primary"
+                                        }`}
+                                        onClick={() => setViewMode("list")}
+                                    >
+                                        <i className="fas fa-list mr-1"></i>
+                                        Liste
+                                    </button>
+                                    <button
+                                        className={`btn ${
+                                            viewMode === "week"
+                                                ? "btn-primary"
+                                                : "btn-outline-primary"
+                                        }`}
+                                        onClick={() => setViewMode("week")}
+                                    >
+                                        <i className="fas fa-calendar-week mr-1"></i>
+                                        Semaine
+                                    </button>
+                                    <button
+                                        className={`btn ${
+                                            viewMode === "calendar"
+                                                ? "btn-primary"
+                                                : "btn-outline-primary"
+                                        }`}
+                                        onClick={() => setViewMode("calendar")}
+                                    >
+                                        <i className="fas fa-calendar mr-1"></i>
+                                        Calendrier
+                                    </button>
                                 </div>
                             </div>
                         </div>
                     </Card>
 
-                    {/* Affichage en liste */}
+                    {/* Vue Liste */}
                     {viewMode === "list" && (
-                        <Card title="Liste des séances" icon="fas fa-list">
-                            {schedules.data.length === 0 ? (
+                        <Card
+                            title="Liste des cours programmés"
+                            icon="fas fa-list"
+                        >
+                            {!uniqueSchedules ||
+                            uniqueSchedules.length === 0 ? (
                                 <Alert type="info">
-                                    Aucune séance programmée pour le moment.
+                                    Aucune séance programmée.
                                 </Alert>
                             ) : (
                                 <div className="table-responsive">
-                                    <table className="table table-hover">
-                                        <thead>
+                                    <table className="table table-hover table-striped">
+                                        <thead className="thead-dark">
                                             <tr>
-                                                <th>
-                                                    <div className="custom-control custom-checkbox">
-                                                        <input
-                                                            type="checkbox"
-                                                            className="custom-control-input"
-                                                            id="select-all"
-                                                            checked={
-                                                                selectedSchedules.length ===
-                                                                    schedules
-                                                                        .data
-                                                                        .length &&
-                                                                schedules.data
-                                                                    .length > 0
-                                                            }
-                                                            onChange={(e) => {
-                                                                if (
-                                                                    e.target
-                                                                        .checked
-                                                                ) {
-                                                                    setSelectedSchedules(
-                                                                        schedules.data.map(
-                                                                            (
-                                                                                s
-                                                                            ) =>
-                                                                                s.id
-                                                                        )
-                                                                    );
-                                                                } else {
-                                                                    setSelectedSchedules(
-                                                                        []
-                                                                    );
-                                                                }
-                                                            }}
-                                                        />
-                                                        <label
-                                                            className="custom-control-label"
-                                                            htmlFor="select-all"
-                                                        ></label>
-                                                    </div>
-                                                </th>
-                                                <th>Date & Heure</th>
+                                                <th width="40">#</th>
                                                 <th>Cours</th>
                                                 <th>Enseignant</th>
                                                 <th>Classe</th>
-                                                <th>Salle</th>
-                                                <th>Statut</th>
-                                                <th>Actions</th>
+                                                <th className="text-center">
+                                                    Nombre de séances
+                                                </th>
+                                                <th>Statut général</th>
+                                                <th width="200">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {schedules.data.map((schedule) => (
-                                                <tr
-                                                    key={schedule.id}
-                                                    className={
-                                                        selectedSchedules.includes(
-                                                            schedule.id
-                                                        )
-                                                            ? "table-active"
-                                                            : ""
-                                                    }
-                                                >
-                                                    <td>
-                                                        <div className="custom-control custom-checkbox">
-                                                            <input
-                                                                type="checkbox"
-                                                                className="custom-control-input"
-                                                                id={`select-${schedule.id}`}
-                                                                checked={selectedSchedules.includes(
-                                                                    schedule.id
-                                                                )}
-                                                                onChange={() =>
-                                                                    toggleScheduleSelection(
-                                                                        schedule.id
-                                                                    )
+                                            {uniqueSchedules.map(
+                                                (schedule, index) => (
+                                                    <tr key={`unique-${index}`}>
+                                                        <td className="font-weight-bold">
+                                                            {index + 1}
+                                                        </td>
+                                                        <td>
+                                                            <strong className="text-info">
+                                                                {
+                                                                    schedule
+                                                                        .course
+                                                                        ?.name
                                                                 }
-                                                            />
-                                                            <label
-                                                                className="custom-control-label"
-                                                                htmlFor={`select-${schedule.id}`}
-                                                            ></label>
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <div>
-                                                            <strong>
-                                                                {formatDate(
-                                                                    schedule.start_time
-                                                                )}
                                                             </strong>
-                                                            <br />
-                                                            <span className="text-muted">
-                                                                {formatTime(
-                                                                    schedule.start_time
-                                                                )}{" "}
-                                                                -{" "}
-                                                                {formatTime(
-                                                                    schedule.end_time
-                                                                )}
-                                                            </span>
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <strong>
-                                                            {
-                                                                schedule.course
-                                                                    ?.name
-                                                            }
-                                                        </strong>
-                                                    </td>
-                                                    <td>
-                                                        <Link
-                                                            href={route(
-                                                                "planning.teacher",
-                                                                schedule.teacher_id
-                                                            )}
-                                                            className="text-primary teacher-link"
-                                                            title="Voir le planning de cet enseignant"
-                                                        >
-                                                            {
-                                                                schedule.teacher
-                                                                    ?.name
-                                                            }
-                                                        </Link>
-                                                    </td>
-                                                    <td>
-                                                        <Link
-                                                            href={route(
-                                                                "planning.class",
-                                                                schedule.school_class_id
-                                                            )}
-                                                            className="text-primary class-link"
-                                                            title="Voir le planning de cette classe"
-                                                        >
-                                                            {
-                                                                schedule
-                                                                    .school_class
-                                                                    ?.name
-                                                            }
-                                                        </Link>
-                                                    </td>
-                                                    <td>
-                                                        <i className="fas fa-door-open mr-1"></i>
-                                                        {
-                                                            schedule.classroom
-                                                                ?.name
-                                                        }
-                                                    </td>
-                                                    <td>
-                                                        <span
-                                                            className={getStatusBadge(
-                                                                schedule.status
-                                                            )}
-                                                        >
-                                                            {getStatusLabel(
-                                                                schedule.status
-                                                            )}
-                                                        </span>
-                                                        {schedule.is_recurring && (
-                                                            <span className="badge badge-info ml-1">
-                                                                <i className="fas fa-repeat"></i>
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td>
-                                                        <div className="btn-group btn-group-sm">
+                                                        </td>
+                                                        <td>
                                                             <Link
                                                                 href={route(
-                                                                    "planning.show",
-                                                                    schedule.id
+                                                                    "planning.teacher",
+                                                                    schedule.teacher_id
                                                                 )}
-                                                                className="btn btn-info"
-                                                                title="Voir"
+                                                                className="text-primary teacher-link"
+                                                                title="Voir le planning de cet enseignant"
                                                             >
-                                                                <i className="fas fa-eye"></i>
-                                                            </Link>
-                                                            <Link
-                                                                href={route(
-                                                                    "planning.edit",
-                                                                    schedule.id
-                                                                )}
-                                                                className="btn btn-warning"
-                                                                title="Modifier"
-                                                            >
-                                                                <i className="fas fa-edit"></i>
-                                                            </Link>
-                                                            <button
-                                                                type="button"
-                                                                className="btn btn-danger"
-                                                                title="Supprimer"
-                                                                onClick={() =>
-                                                                    handleDelete(
-                                                                        schedule
-                                                                    )
+                                                                {
+                                                                    schedule
+                                                                        .teacher
+                                                                        ?.name
                                                                 }
+                                                            </Link>
+                                                        </td>
+                                                        <td>
+                                                            <Link
+                                                                href={route(
+                                                                    "planning.class",
+                                                                    schedule.school_class_id
+                                                                )}
+                                                                className="text-primary class-link"
+                                                                title="Voir le planning de cette classe"
                                                             >
-                                                                <i className="fas fa-trash"></i>
-                                                            </button>
-                                                            {schedule.status?.toLowerCase() ===
-                                                                "scheduled" &&
-                                                                new Date(
-                                                                    schedule.start_time.replace(
-                                                                        "Z",
-                                                                        ""
-                                                                    )
-                                                                ) <=
-                                                                    new Date() && (
+                                                                {
+                                                                    schedule
+                                                                        .school_class
+                                                                        ?.name
+                                                                }
+                                                            </Link>
+                                                        </td>
+                                                        <td className="text-center">
+                                                            <span
+                                                                className="badge badge-primary badge-pill"
+                                                                style={{
+                                                                    fontSize:
+                                                                        "1rem",
+                                                                    padding:
+                                                                        "0.5rem 0.75rem",
+                                                                }}
+                                                            >
+                                                                {
+                                                                    schedule.sessionCount
+                                                                }{" "}
+                                                                séance
+                                                                {schedule.sessionCount >
+                                                                1
+                                                                    ? "s"
+                                                                    : ""}
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span
+                                                                className={getStatusBadge(
+                                                                    schedule.status
+                                                                )}
+                                                            >
+                                                                {getStatusLabel(
+                                                                    schedule.status
+                                                                )}
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <div className="btn-group btn-group-sm">
+                                                                <a
+                                                                    href={route(
+                                                                        "planning.show",
+                                                                        schedule.id
+                                                                    )}
+                                                                    className="btn btn-info"
+                                                                    title="Voir détails"
+                                                                >
+                                                                    <i className="fas fa-eye"></i>
+                                                                </a>
+                                                                {schedule.status ===
+                                                                    "scheduled" && (
                                                                     <>
+                                                                        <a
+                                                                            href={route(
+                                                                                "planning.edit",
+                                                                                schedule.id
+                                                                            )}
+                                                                            className="btn btn-warning"
+                                                                            title="Modifier"
+                                                                        >
+                                                                            <i className="fas fa-edit"></i>
+                                                                        </a>
                                                                         <button
                                                                             type="button"
                                                                             className="btn btn-success"
-                                                                            title="Marquer terminé"
                                                                             onClick={() =>
                                                                                 markAsCompleted(
                                                                                     schedule
                                                                                 )
                                                                             }
+                                                                            title="Marquer terminé"
                                                                         >
                                                                             <i className="fas fa-check"></i>
                                                                         </button>
                                                                         <button
                                                                             type="button"
                                                                             className="btn btn-secondary"
-                                                                            title="Annuler"
                                                                             onClick={() =>
                                                                                 handleCancel(
                                                                                     schedule
                                                                                 )
                                                                             }
+                                                                            title="Annuler"
                                                                         >
                                                                             <i className="fas fa-ban"></i>
                                                                         </button>
                                                                     </>
                                                                 )}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-
-                            {/* Pagination */}
-                            {schedules.last_page > 1 && (
-                                <div className="d-flex justify-content-between align-items-center mt-3">
-                                    <div>
-                                        Affichage de {schedules.from} à{" "}
-                                        {schedules.to} sur {schedules.total}{" "}
-                                        résultats
-                                    </div>
-                                    <nav>
-                                        <ul className="pagination pagination-sm mb-0">
-                                            {schedules.links.map(
-                                                (link, index) => (
-                                                    <li
-                                                        key={index}
-                                                        className={`page-item ${
-                                                            link.active
-                                                                ? "active"
-                                                                : ""
-                                                        } ${
-                                                            !link.url
-                                                                ? "disabled"
-                                                                : ""
-                                                        }`}
-                                                    >
-                                                        {link.url ? (
-                                                            <Link
-                                                                href={link.url}
-                                                                className="page-link"
-                                                                dangerouslySetInnerHTML={{
-                                                                    __html: link.label,
-                                                                }}
-                                                            />
-                                                        ) : (
-                                                            <span
-                                                                className="page-link"
-                                                                dangerouslySetInnerHTML={{
-                                                                    __html: link.label,
-                                                                }}
-                                                            />
-                                                        )}
-                                                    </li>
+                                                                <button
+                                                                    type="button"
+                                                                    className="btn btn-danger"
+                                                                    onClick={() =>
+                                                                        handleDelete(
+                                                                            schedule
+                                                                        )
+                                                                    }
+                                                                    title="Supprimer"
+                                                                >
+                                                                    <i className="fas fa-trash"></i>
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
                                                 )
                                             )}
-                                        </ul>
-                                    </nav>
+                                        </tbody>
+                                    </table>
                                 </div>
                             )}
                         </Card>
                     )}
 
-                    {/* Affichage en semaine */}
+                    {/* Vue Semaine */}
                     {viewMode === "week" && (
                         <Card
                             title="Planning de la semaine"
@@ -1049,7 +722,6 @@ export default function Index({
                                                     0 ? (
                                                         <p className="text-muted mb-0">
                                                             Aucune séance
-                                                            programmée
                                                         </p>
                                                     ) : (
                                                         <div className="timeline">
@@ -1100,15 +772,15 @@ export default function Index({
                                                                                                 .teacher
                                                                                                 ?.name
                                                                                         }{" "}
-                                                                                        |{" "}
-                                                                                        <i className="fas fa-users mr-1"></i>
+                                                                                        |
+                                                                                        <i className="fas fa-users ml-2 mr-1"></i>
                                                                                         {
                                                                                             schedule
                                                                                                 .school_class
                                                                                                 ?.name
                                                                                         }{" "}
-                                                                                        |{" "}
-                                                                                        <i className="fas fa-door-open mr-1"></i>
+                                                                                        |
+                                                                                        <i className="fas fa-door-open ml-2 mr-1"></i>
                                                                                         {
                                                                                             schedule
                                                                                                 .classroom
@@ -1140,12 +812,12 @@ export default function Index({
                         </Card>
                     )}
 
-                    {/* Affichage en calendrier */}
+                    {/* Vue Calendrier */}
                     {viewMode === "calendar" && (
                         <Card title="Vue Calendrier" icon="fas fa-calendar">
-                            {schedules.data.length === 0 ? (
+                            {!schedules?.data || schedules.data.length === 0 ? (
                                 <Alert type="info">
-                                    Aucun planning n'a encore été enregistré.
+                                    Aucune séance programmée.
                                 </Alert>
                             ) : (
                                 <FullCalendar
@@ -1153,7 +825,6 @@ export default function Index({
                                     initialView="timeGridWeek"
                                     firstDay={1}
                                     locale="fr"
-                                    timeZone="local"
                                     allDaySlot={false}
                                     slotMinTime="07:30:00"
                                     slotMaxTime="22:00:00"
@@ -1162,23 +833,14 @@ export default function Index({
                                         title: `${
                                             schedule.course?.name || "Cours"
                                         } - ${schedule.teacher?.name || ""}`,
-                                        start: schedule.start_time.replace(
-                                            "Z",
-                                            ""
-                                        ),
-                                        end: schedule.end_time?.replace(
-                                            "Z",
-                                            ""
-                                        ),
+                                        start: schedule.start_time,
+                                        end: schedule.end_time,
                                         color:
                                             schedule.status === "completed"
                                                 ? "#28a745"
                                                 : schedule.status ===
                                                   "cancelled"
                                                 ? "#dc3545"
-                                                : schedule.status ===
-                                                  "rescheduled"
-                                                ? "#ffc107"
                                                 : "#007bff",
                                     }))}
                                     headerToolbar={{
@@ -1237,7 +899,7 @@ export default function Index({
                                     {formatTime(scheduleToDelete?.end_time)}
                                 </div>
                             </div>
-                            <div className="modal-footer justify-content-between">
+                            <div className="modal-footer">
                                 <button
                                     type="button"
                                     className="btn btn-secondary"
@@ -1291,21 +953,6 @@ export default function Index({
                                 </button>
                             </div>
                             <div className="modal-body">
-                                <p>
-                                    Vous êtes sur le point d'annuler cette
-                                    séance :
-                                </p>
-                                <div className="alert alert-info">
-                                    <strong>Cours :</strong>{" "}
-                                    {scheduleToCancel?.course?.name}
-                                    <br />
-                                    <strong>Date :</strong>{" "}
-                                    {formatDate(scheduleToCancel?.start_time)}
-                                    <br />
-                                    <strong>Heure :</strong>{" "}
-                                    {formatTime(scheduleToCancel?.start_time)} -{" "}
-                                    {formatTime(scheduleToCancel?.end_time)}
-                                </div>
                                 <div className="form-group">
                                     <label>
                                         Raison de l'annulation{" "}
@@ -1318,12 +965,11 @@ export default function Index({
                                         onChange={(e) =>
                                             setCancelReason(e.target.value)
                                         }
-                                        placeholder="Veuillez indiquer la raison de l'annulation..."
-                                        required
+                                        placeholder="Veuillez indiquer la raison..."
                                     ></textarea>
                                 </div>
                             </div>
-                            <div className="modal-footer justify-content-between">
+                            <div className="modal-footer">
                                 <button
                                     type="button"
                                     className="btn btn-secondary"
@@ -1337,17 +983,7 @@ export default function Index({
                                     onClick={confirmCancel}
                                     disabled={processing || !cancelReason}
                                 >
-                                    {processing ? (
-                                        <>
-                                            <i className="fas fa-spinner fa-spin mr-1"></i>
-                                            Annulation...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <i className="fas fa-ban mr-1"></i>
-                                            Confirmer l'annulation
-                                        </>
-                                    )}
+                                    {processing ? "Annulation..." : "Confirmer"}
                                 </button>
                             </div>
                         </div>
@@ -1355,123 +991,7 @@ export default function Index({
                 </div>
             )}
 
-            {/* Modal d'actions groupées */}
-            {showBulkModal && (
-                <div
-                    className="modal fade show d-block"
-                    style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-                >
-                    <div className="modal-dialog">
-                        <div className="modal-content">
-                            <div className="modal-header">
-                                <h4 className="modal-title">
-                                    <i className="fas fa-tasks mr-2"></i>
-                                    Actions groupées
-                                </h4>
-                                <button
-                                    type="button"
-                                    className="close"
-                                    onClick={() => setShowBulkModal(false)}
-                                >
-                                    <span>&times;</span>
-                                </button>
-                            </div>
-                            <div className="modal-body">
-                                <p>
-                                    Sélectionnez l'action à appliquer aux{" "}
-                                    <strong>{selectedSchedules.length}</strong>{" "}
-                                    séance(s) sélectionnée(s) :
-                                </p>
-                                <div className="form-group">
-                                    <label>Action</label>
-                                    <select
-                                        className="form-control"
-                                        value={bulkAction}
-                                        onChange={(e) =>
-                                            setBulkAction(e.target.value)
-                                        }
-                                    >
-                                        <option value="">
-                                            -- Choisir une action --
-                                        </option>
-                                        <option value="complete">
-                                            Marquer comme terminées
-                                        </option>
-                                        <option value="cancel">Annuler</option>
-                                        <option value="delete">
-                                            Supprimer
-                                        </option>
-                                    </select>
-                                </div>
-
-                                {bulkAction === "cancel" && (
-                                    <div className="form-group">
-                                        <label>
-                                            Raison de l'annulation{" "}
-                                            <span className="text-danger">
-                                                *
-                                            </span>
-                                        </label>
-                                        <textarea
-                                            className="form-control"
-                                            rows="3"
-                                            value={cancelReason}
-                                            onChange={(e) =>
-                                                setCancelReason(e.target.value)
-                                            }
-                                            placeholder="Indiquez la raison de l'annulation..."
-                                            required
-                                        ></textarea>
-                                    </div>
-                                )}
-
-                                {bulkAction && (
-                                    <div className="alert alert-warning">
-                                        <i className="fas fa-exclamation-triangle mr-2"></i>
-                                        <strong>Attention :</strong> Cette
-                                        action sera appliquée à toutes les
-                                        séances sélectionnées.
-                                    </div>
-                                )}
-                            </div>
-                            <div className="modal-footer justify-content-between">
-                                <button
-                                    type="button"
-                                    className="btn btn-secondary"
-                                    onClick={() => setShowBulkModal(false)}
-                                >
-                                    Annuler
-                                </button>
-                                <button
-                                    type="button"
-                                    className="btn btn-primary"
-                                    onClick={confirmBulkAction}
-                                    disabled={
-                                        processing ||
-                                        !bulkAction ||
-                                        (bulkAction === "cancel" &&
-                                            !cancelReason)
-                                    }
-                                >
-                                    {processing ? (
-                                        <>
-                                            <i className="fas fa-spinner fa-spin mr-1"></i>
-                                            Traitement...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <i className="fas fa-check mr-1"></i>
-                                            Appliquer l'action
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Modal de séance terminée */}
+            {/* Modal marquer terminé */}
             {showCompletedModal && (
                 <div
                     className="modal fade show d-block"
@@ -1482,7 +1002,7 @@ export default function Index({
                             <div className="modal-header bg-success text-white">
                                 <h4 className="modal-title">
                                     <i className="fas fa-check-circle mr-2"></i>
-                                    Marquer la séance comme terminée
+                                    Marquer comme terminée
                                 </h4>
                                 <button
                                     type="button"
@@ -1492,85 +1012,59 @@ export default function Index({
                                     <span>&times;</span>
                                 </button>
                             </div>
-
                             <div className="modal-body">
-                                {/* Informations de la séance */}
-                                <div className="alert alert-success">
-                                    <h5 className="mb-3">
-                                        <i className="fas fa-info-circle mr-2"></i>
-                                        Informations de la séance
-                                    </h5>
-                                    {/* ... ton contenu existant ... */}
+                                <div className="form-group">
+                                    <label>Durée (heures)</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        className="form-control"
+                                        value={
+                                            completedData.duration_hours || ""
+                                        }
+                                        onChange={(e) =>
+                                            setCompletedData({
+                                                ...completedData,
+                                                duration_hours: e.target.value,
+                                            })
+                                        }
+                                    />
+                                    <small className="text-muted">
+                                        Exemple: 1.5 pour 1h30
+                                    </small>
                                 </div>
-
-                                {/* Saisie manuelle de la durée */}
-                                <div className="card bg-light border-success mb-3">
-                                    <div className="card-body">
-                                        <h5>Saisir la durée effectuée</h5>
-                                        <div className="row">
-                                            <div className="col-md-8">
-                                                <label>Heures</label>
-                                                <input
-                                                    type="number"
-                                                    step="0.01"
-                                                    min={0}
-                                                    className="form-control"
-                                                    value={
-                                                        completedData?.duration_hours ||
-                                                        ""
-                                                    }
-                                                    onChange={(e) =>
-                                                        setCompletedData({
-                                                            ...completedData,
-                                                            duration_hours:
-                                                                parseFloat(
-                                                                    e.target
-                                                                        .value
-                                                                ),
-                                                        })
-                                                    }
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="alert alert-warning">
-                                    <i className="fas fa-exclamation-triangle mr-2"></i>
-                                    <strong>Attention :</strong> Cette action
-                                    marquera définitivement la séance comme
-                                    terminée. Les heures seront comptabilisées
-                                    pour l'enseignant et le rapport d'heures du
-                                    cours.
+                                <div className="form-group">
+                                    <label>Notes (optionnel)</label>
+                                    <textarea
+                                        className="form-control"
+                                        rows="3"
+                                        value={completedData.notes || ""}
+                                        onChange={(e) =>
+                                            setCompletedData({
+                                                ...completedData,
+                                                notes: e.target.value,
+                                            })
+                                        }
+                                    ></textarea>
                                 </div>
                             </div>
-
-                            <div className="modal-footer justify-content-between">
+                            <div className="modal-footer">
                                 <button
                                     type="button"
                                     className="btn btn-secondary"
                                     onClick={() => setShowCompletedModal(false)}
                                 >
-                                    <i className="fas fa-times mr-1"></i>
                                     Annuler
                                 </button>
                                 <button
                                     type="button"
-                                    className="btn btn-success btn-lg"
+                                    className="btn btn-success"
                                     onClick={confirmMarkCompleted}
                                     disabled={processing}
                                 >
-                                    {processing ? (
-                                        <>
-                                            <i className="fas fa-spinner fa-spin mr-1"></i>
-                                            Enregistrement...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <i className="fas fa-check-circle mr-1"></i>
-                                            Confirmer - Séance terminée
-                                        </>
-                                    )}
+                                    {processing
+                                        ? "Enregistrement..."
+                                        : "Confirmer"}
                                 </button>
                             </div>
                         </div>
@@ -1595,25 +1089,12 @@ export default function Index({
                     border-radius: 10px;
                     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
                 }
-
                 .table td {
                     vertical-align: middle;
                 }
-
                 .modal.show {
                     display: block !important;
                 }
-
-                .btn-lg {
-                    font-size: 1rem;
-                    padding: 0.75rem 1.25rem;
-                }
-
-                .badge-lg {
-                    font-size: 0.9rem;
-                    padding: 0.5rem 0.75rem;
-                }
-
                 .time-badge {
                     color: white;
                     padding: 8px 12px;
@@ -1621,55 +1102,27 @@ export default function Index({
                     font-weight: bold;
                     text-align: center;
                 }
-
-                .fc .fc-toolbar-title {
-                    font-size: 1.25rem;
-                    font-weight: 600;
-                }
-
-                .fc-daygrid-event {
-                    border-radius: 6px;
-                    font-size: 0.9rem;
-                }
-
                 .timeline-item {
                     background: white;
                     padding: 15px;
                     border-radius: 5px;
                     border-left: 3px solid #007bff;
                 }
-
                 .table-active {
                     background-color: rgba(0, 123, 255, 0.075);
                 }
-
-                .btn-group {
-                    gap: 0.25rem;
+                .btn-group-sm .btn {
+                    padding: 0.25rem 0.5rem;
+                    font-size: 0.875rem;
                 }
-
-                .table td a.teacher-link,
-.table td a.class-link {
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.table td a.teacher-link:hover,
-.table td a.class-link:hover {
-    text-decoration: underline;
-}
-
-.input-group-append .btn {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-}
-
-.card-outline.card-info .card-header {
-    border-color: #17a2b8;
-}
-
-.card-outline.card-success .card-header {
-    border-color: #28a745;
-}
+                .thead-dark th {
+                    background-color: #343a40;
+                    color: white;
+                    font-weight: 600;
+                }
+                .table-hover tbody tr:hover {
+                    background-color: rgba(0, 123, 255, 0.05);
+                }
             `}</style>
         </AdminLayout>
     );

@@ -6,31 +6,43 @@ use App\Http\Controllers\Controller;
 use App\Models\Resource;
 use App\Models\AcademicYear;
 use App\Models\Course;
+use App\Models\ResourceDownload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class EtudiantResourceController extends Controller
 {
-    /**
-     * Liste des ressources accessibles à l'étudiant
-     */
     public function index(Request $request)
     {
         $student = auth()->user();
+        $student->load('schoolClass');
         
-        // Vérifier que l'étudiant a une classe assignée
         if (!$student->school_class_id) {
             return Inertia::render('Etudiant/Ressource/Index', [
-                'resources' => collect([]),
+                'resources' => [
+                    'data' => [],
+                    'links' => [],
+                    'last_page' => 1
+                ],
+                'stats' => [
+                    'total' => 0,
+                    'by_type' => [],
+                    'recent' => 0
+                ],
+                'subjects' => [],
+                'academicYears' => [],
+                'filters' => [],
+                'student' => $student,
                 'error' => 'Vous n\'êtes pas assigné à une classe.',
             ]);
         }
 
-        $query = Resource::with(['cours', 'schoolClass', 'academicYear', 'uploader'])
+        // CHANGÉ: Utiliser ofClass qui utilise whereHas avec la relation many-to-many
+        $query = Resource::with(['cours', 'schoolClasses', 'academicYear', 'uploader'])
             ->ofClass($student->school_class_id)
-            ->active()
-            ->public()
+            ->where('status', 'active')
+            ->where('visibility', 'public')
             ->available()
             ->orderBy('created_at', 'desc');
 
@@ -58,71 +70,69 @@ class EtudiantResourceController extends Controller
         $resources = $query->paginate(20)->withQueryString();
 
         // Statistiques
+        $baseQuery = Resource::ofClass($student->school_class_id)
+            ->where('status', 'active')
+            ->where('visibility', 'public')
+            ->available();
+
         $stats = [
-            'total' => Resource::ofClass($student->school_class_id)
-                ->active()
-                ->public()
-                ->available()
-                ->count(),
-            'by_type' => Resource::ofClass($student->school_class_id)
-                ->active()
-                ->public()
-                ->available()
+            'total' => (clone $baseQuery)->count(),
+            'by_type' => (clone $baseQuery)
                 ->selectRaw('type, COUNT(*) as count')
                 ->groupBy('type')
-                ->pluck('count', 'type'),
-            'recent' => Resource::ofClass($student->school_class_id)
-                ->active()
-                ->public()
-                ->available()
+                ->pluck('count', 'type')
+                ->toArray(),
+            'recent' => (clone $baseQuery)
                 ->where('created_at', '>=', now()->subDays(7))
                 ->count(),
         ];
 
-        // Données pour les filtres
-        $subjects = Subject::whereHas('schoolClasses', function ($query) use ($student) {
+        $subjects = Course::whereHas('schoolClasses', function ($query) use ($student) {
             $query->where('school_classes.id', $student->school_class_id);
-        })->get();
+        })->orderBy('name')->get();
 
         $academicYears = AcademicYear::whereHas('resources', function ($query) use ($student) {
-            $query->where('school_class_id', $student->school_class_id);
-        })->orderBy('is_active', 'desc')->get();
+            $query->whereHas('schoolClasses', function($q) use ($student) {
+                $q->where('school_class_id', $student->school_class_id);
+            });
+        })->orderBy('is_active', 'desc')->orderBy('name', 'desc')->get();
 
         return Inertia::render('Etudiant/Ressource/Index', [
             'resources' => $resources,
             'stats' => $stats,
             'subjects' => $subjects,
             'academicYears' => $academicYears,
-            'filters' => $request->only(['search', 'type', 'subject_id', 'academic_year_id', 'semester']),
-            'student' => $student->load('schoolClass'),
+            'filters' => $request->only(['search', 'type', 'subject_id', 'academic_year_id', 'semester']) ?: [],
+            'student' => $student,
         ]);
     }
 
-    /**
-     * Voir une ressource
-     */
     public function show(Resource $resource)
     {
         $student = auth()->user();
 
-        // Vérifier l'accès
+        // CHANGÉ: Utiliser la méthode canBeAccessedBy qui vérifie belongsToClass
         if (!$resource->canBeAccessedBy($student)) {
             abort(403, 'Vous n\'avez pas accès à cette ressource.');
         }
 
-        $resource->load(['cours', 'schoolClass', 'academicYear', 'uploader']);
+        $resource->load(['subject', 'schoolClasses', 'academicYear', 'uploader']);
 
-        // Enregistrer la vue
-        $resource->recordAccess($student, 'view');
+        ResourceDownload::create([
+            'user_id' => $student->id,
+            'resource_id' => $resource->id,
+            'action' => 'view',
+            'ip_address' => request()->ip(),
+        ]);
 
-        // Ressources similaires
+        $resource->increment('views_count');
+
         $similarResources = Resource::ofClass($student->school_class_id)
             ->ofSubject($resource->subject_id)
             ->ofType($resource->type)
             ->where('id', '!=', $resource->id)
-            ->active()
-            ->public()
-            ->available()
+            ->where('status', 'active')
+            ->where('visibility', 'public')
             ->limit(5)
             ->get();
 
@@ -132,22 +142,23 @@ class EtudiantResourceController extends Controller
         ]);
     }
 
-    /**
-     * Télécharger une ressource
-     */
     public function download(Resource $resource)
     {
         $student = auth()->user();
 
-        // Vérifier l'accès
         if (!$resource->canBeAccessedBy($student)) {
             abort(403, 'Vous n\'avez pas accès à cette ressource.');
         }
 
-        // Enregistrer le téléchargement
-        $resource->recordAccess($student, 'download');
+        ResourceDownload::create([
+            'user_id' => $student->id,
+            'resource_id' => $resource->id,
+            'action' => 'download',
+            'ip_address' => request()->ip(),
+        ]);
 
-        // Télécharger le fichier
+        $resource->increment('downloads_count');
+
         if (!Storage::exists($resource->file_path)) {
             abort(404, 'Fichier introuvable.');
         }
@@ -155,68 +166,5 @@ class EtudiantResourceController extends Controller
         return Storage::download($resource->file_path, $resource->file_name);
     }
 
-    /**
-     * Statistiques personnelles
-     */
-    public function statistics()
-    {
-        $student = auth()->user();
-
-        // Ressources consultées
-        $viewedResources = ResourceDownload::where('user_id', $student->id)
-            ->where('action', 'view')
-            ->with('resource.subject')
-            ->latest()
-            ->limit(10)
-            ->get();
-
-        // Ressources téléchargées
-        $downloadedResources = ResourceDownload::where('user_id', $student->id)
-            ->where('action', 'download')
-            ->with('resource.subject')
-            ->latest()
-            ->limit(10)
-            ->get();
-
-        // Statistiques par type
-        $statsByType = ResourceDownload::where('user_id', $student->id)
-            ->join('resources', 'resource_downloads.resource_id', '=', 'resources.id')
-            ->selectRaw('resources.type, COUNT(*) as count')
-            ->groupBy('resources.type')
-            ->get()
-            ->mapWithKeys(function ($item) {
-                return [$item->type => $item->count];
-            });
-
-        // Statistiques par matière
-        $statsBySubject = ResourceDownload::where('user_id', $student->id)
-            ->join('resources', 'resource_downloads.resource_id', '=', 'resources.id')
-            ->join('courses', 'resources.cours_id', '=', 'courses.id')
-            ->selectRaw('courses.name, COUNT(*) as count')
-            ->groupBy('courses.id', 'courses.name')
-            ->get()
-            ->mapWithKeys(function ($item) {
-                return [$item->name => $item->count];
-            });
-
-        $stats = [
-            'total_views' => ResourceDownload::where('user_id', $student->id)
-                ->where('action', 'view')
-                ->count(),
-            'total_downloads' => ResourceDownload::where('user_id', $student->id)
-                ->where('action', 'download')
-                ->count(),
-            'by_type' => $statsByType,
-            'by_subject' => $statsBySubject,
-            'this_week' => ResourceDownload::where('user_id', $student->id)
-                ->where('created_at', '>=', now()->startOfWeek())
-                ->count(),
-        ];
-
-        return Inertia::render('Etudiant/Ressource/Statistics', [
-            'stats' => $stats,
-            'viewedResources' => $viewedResources,
-            'downloadedResources' => $downloadedResources,
-        ]);
-    }
+    // ... reste du code
 }

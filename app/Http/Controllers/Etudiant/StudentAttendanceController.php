@@ -23,6 +23,7 @@ class StudentAttendanceController extends Controller
      */
     public function index(Request $request)
     {
+    
         $student = auth()->user();
         
         $query = Attendance::ofStudent($student->id)
@@ -59,7 +60,7 @@ class StudentAttendanceController extends Controller
             ->limit(10)
             ->get();
 
-        return Inertia::render('Etudiant/Attendance/Index', [
+        return Inertia::render('Etudiant/Absences/Index', [
             'attendances' => $attendances,
             'stats' => $stats,
             'unjustifiedAbsences' => $unjustifiedAbsences,
@@ -78,9 +79,11 @@ class StudentAttendanceController extends Controller
             abort(403);
         }
 
-        $attendance->load(['course', 'schoolClass', 'markedBy', 'validatedBy']);
+       
 
-        return Inertia::render('Etudiant/Attendance/Show', [
+        $attendance->load(['course', 'schoolClass', 'markedBy', 'validatedBy']);
+ 
+        return Inertia::render('Etudiant/Absences/Show', [
             'attendance' => $attendance,
             'canJustify' => $attendance->canBeJustified(),
         ]);
@@ -100,7 +103,8 @@ class StudentAttendanceController extends Controller
             return back()->withErrors(['error' => 'Cette absence/retard ne peut pas être justifié(e)']);
         }
 
-        return Inertia::render('Etudiant/Attendance/Justify', [
+        $attendance->load(['course', 'schoolClass', 'markedBy', 'validatedBy']);
+        return Inertia::render('Etudiant/Absences/Justify', [
             'attendance' => $attendance,
         ]);
     }
@@ -138,7 +142,7 @@ class StudentAttendanceController extends Controller
 
             $this->attendanceService->submitJustification($attendance->id, $data);
 
-            return redirect()->route('student.attendances.index')
+            return redirect()->route('etudiant.attendances.index')
                 ->with('success', 'Justification soumise avec succès. Elle sera examinée par l\'administration.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()])->withInput();
@@ -189,7 +193,7 @@ class StudentAttendanceController extends Controller
                 ];
             });
 
-        return Inertia::render('Etudiant/Attendance/Statistics', [
+        return Inertia::render('Etudiant/Absences/Statistics', [
             'stats' => $stats,
             'attendancesBySubject' => $attendancesBySubject,
             'monthlyStats' => $monthlyStats,

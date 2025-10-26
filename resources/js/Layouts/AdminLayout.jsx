@@ -17,12 +17,9 @@ export default function AdminLayout({ children, title = "Dashboard" }) {
     }, []);
 
     useEffect(() => {
-        // Initialize AdminLTE features after component mount
         if (window.$ && window.AdminLTE) {
-            // Initialize tooltips
             window.$('[data-toggle="tooltip"]').tooltip();
 
-            // Initialize overlay scrollbars
             if (window.$.fn.overlayScrollbars) {
                 window.$(".sidebar .nav-sidebar").overlayScrollbars({
                     scrollbars: {
@@ -82,9 +79,7 @@ export default function AdminLayout({ children, title = "Dashboard" }) {
 
     const handleLogout = (e) => {
         e.preventDefault();
-        if (confirm("Voulez-vous vraiment vous déconnecter ?")) {
-            router.post(route("logout"));
-        }
+        router.post(route("logout"));
     };
 
     return (
@@ -193,20 +188,26 @@ export default function AdminLayout({ children, title = "Dashboard" }) {
 
                         {/* User Menu */}
                         <li className="nav-item dropdown user-menu">
-                            <a
-                                href="#"
+                            <button
+                                type="button"
                                 className="nav-link dropdown-toggle"
                                 data-toggle="dropdown"
+                                style={{
+                                    background: "none",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    padding: "0.5rem 1rem", // Ajustez selon vos besoins
+                                }}
                             >
                                 <img
-                                    src={"/Images/ia.jpeg"}
+                                    src="/Images/ia.jpeg"
                                     className="user-image img-circle elevation-2"
                                     alt="User Image"
                                 />
                                 <span className="d-none d-md-inline">
                                     {auth.user.name}
                                 </span>
-                            </a>
+                            </button>
                             <ul className="dropdown-menu dropdown-menu-lg dropdown-menu-right">
                                 {/* User image */}
                                 <li className="user-header bg-primary">

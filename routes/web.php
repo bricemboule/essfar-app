@@ -21,9 +21,11 @@ use App\Http\Controllers\Site\EtudeEssfarController;
 use App\Http\Controllers\Site\CertificationController;
 use App\Http\Controllers\Site\FormationController;
 use App\Http\Controllers\Etudiant\EtudiantResourceController;
+use App\Http\Controllers\Scolarite\ScolariteDashboardController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
+    
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
@@ -32,16 +34,6 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/test-login', function() {
-    return response()->json([
-        'status' => 'OK',
-        'user' => auth()->user(),
-        'routes' => [
-            'login' => route('login'),
-            'register' => route('register')
-        ]
-    ]);
-});
 
 /*
 |--------------------------------------------------------------------------
@@ -144,8 +136,8 @@ Route::middleware(['auth', 'role:gestionnaire_scolarite,chef_scolarite,admin'])-
 
 // Routes CHEF SCOLARITÉ
 Route::middleware(['auth', 'role:chef_scolarite,admin'])->prefix('scolarite')->name('scolarite.')->group(function () {
-    Route::get('/dashboard', fn () => Inertia::render('Dashboards/Scolarite/Dashboard'))
-        ->name('dashboard');
+    Route::get('/dashboard', [ScolariteDashboardController::class, 'index'])
+    ->name('dashboard');
     
     // Gestion complète des plannings
     Route::resource('planning', ScheduleController::class)->except(['show']);

@@ -192,20 +192,6 @@ export default function Dashboard({
                                 {student?.academic_year}
                             </p>
                         </div>
-                        <div className="col-sm-4">
-                            <div className="float-sm-right text-center">
-                                <img
-                                    src={
-                                        student?.photo_url ||
-                                        "/images/default-avatar.png"
-                                    }
-                                    alt="Photo de profil"
-                                    className="img-circle elevation-2"
-                                    width="60"
-                                    height="60"
-                                />
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -522,16 +508,7 @@ export default function Dashboard({
                                         {student?.class_name}
                                     </h5>
                                 </div>
-                                <div className="widget-user-image">
-                                    <img
-                                        className="img-circle elevation-2"
-                                        src={
-                                            student?.photo_url ||
-                                            "/images/default-avatar.png"
-                                        }
-                                        alt="Photo de profil"
-                                    />
-                                </div>
+
                                 <div className="card-footer">
                                     <div className="row">
                                         <div className="col-sm-4 border-right">

@@ -17,7 +17,7 @@ export default function Index({
 
     const handleSearch = () => {
         router.get(
-            route("student.attendances.index"),
+            route("etudiant.attendances.index"),
             {
                 type: filterType,
                 subject_id: filterSubject,
@@ -34,7 +34,7 @@ export default function Index({
         setFilterType("");
         setFilterSubject("");
         setFilterMonth("");
-        router.get(route("student.attendances.index"));
+        router.get(route("etudiant.attendances.index"));
     };
 
     const getTypeBadge = (type) => {
@@ -91,7 +91,7 @@ export default function Index({
                         <div className="col-sm-6">
                             <ol className="breadcrumb float-sm-right">
                                 <li className="breadcrumb-item">
-                                    <Link href={route("student.dashboard")}>
+                                    <Link href={route("etudiant.dashboard")}>
                                         Dashboard
                                     </Link>
                                 </li>
@@ -180,7 +180,7 @@ export default function Index({
                                             ).toLocaleDateString("fr-FR")}
                                             <Link
                                                 href={route(
-                                                    "student.attendances.justify-form",
+                                                    "etudiant.attendances.justify-form",
                                                     attendance.id
                                                 )}
                                                 className="btn btn-sm btn-primary ml-2"
@@ -210,7 +210,7 @@ export default function Index({
                             <div className="btn-group">
                                 <Link
                                     href={route(
-                                        "student.attendances.statistics"
+                                        "etudiant.attendances.statistics"
                                     )}
                                     className="btn btn-info"
                                 >
@@ -377,8 +377,7 @@ export default function Index({
                                                         <td>
                                                             {
                                                                 attendance
-                                                                    .subject
-                                                                    .name
+                                                                    .course.name
                                                             }
                                                         </td>
                                                         <td>
@@ -440,7 +439,7 @@ export default function Index({
                                                             <div className="btn-group btn-group-sm">
                                                                 <Link
                                                                     href={route(
-                                                                        "student.attendances.show",
+                                                                        "etudiant.attendances.show",
                                                                         attendance.id
                                                                     )}
                                                                     className="btn btn-info"
@@ -457,7 +456,7 @@ export default function Index({
                                                                             "rejected") && (
                                                                         <Link
                                                                             href={route(
-                                                                                "student.attendances.justify-form",
+                                                                                "etudiant.attendances.justify-form",
                                                                                 attendance.id
                                                                             )}
                                                                             className="btn btn-warning"

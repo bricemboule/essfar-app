@@ -16,7 +16,6 @@ class Resource extends Model
         'description',
         'type',
         'course_id',
-        'school_class_id',
         'academic_year_id',
         'uploaded_by',
         'file_path',
@@ -27,8 +26,8 @@ class Resource extends Model
         'semester',
         'duration',
         'coefficient',
-        'is_public',
-        'is_active',
+        'status',
+        'visibility',
         'available_from',
         'available_until',
         'downloads_count',
@@ -41,8 +40,6 @@ class Resource extends Model
         'exam_date' => 'date',
         'available_from' => 'datetime',
         'available_until' => 'datetime',
-        'is_public' => 'boolean',
-        'is_active' => 'boolean',
         'downloads_count' => 'integer',
         'views_count' => 'integer',
         'file_size' => 'integer',
@@ -50,15 +47,35 @@ class Resource extends Model
         'coefficient' => 'integer',
     ];
 
+    protected $attributes = [
+        'status' => 'active',
+        'visibility' => 'public',
+        'downloads_count' => 0,
+        'views_count' => 0,
+    ];
+
     // Relations
-    public function course()
+    public function cours()
     {
-        return $this->belongsTo(Course::class);
+        return $this->belongsTo(Course::class, 'course_id');
     }
 
-    public function schoolClass()
+    public function course()
     {
-        return $this->belongsTo(SchoolClass::class);
+        return $this->subject();
+    }
+
+    // CHANGÉ: Many-to-Many avec SchoolClass
+    public function schoolClasses()
+    {
+        return $this->belongsToMany(SchoolClass::class, 'resource_school_class')
+                    ->withTimestamps();
+    }
+
+    // Méthode helper pour vérifier si une ressource appartient à une classe spécifique
+    public function belongsToClass($classId)
+    {
+        return $this->schoolClasses()->where('school_class_id', $classId)->exists();
     }
 
     public function academicYear()
@@ -76,7 +93,7 @@ class Resource extends Model
         return $this->hasMany(ResourceDownload::class);
     }
 
-    // Accesseurs
+    // Accesseurs (restent identiques)
     public function getFileUrlAttribute()
     {
         return Storage::url($this->file_path);
@@ -101,6 +118,7 @@ class Resource extends Model
     public function getTypeFormattedAttribute()
     {
         $types = [
+            'ancien_cc' => 'Ancien CC',
             'ancien_ds' => 'Ancien DS',
             'session_normale' => 'Session Normale',
             'session_rattrapage' => 'Session Rattrapage',
@@ -116,7 +134,7 @@ class Resource extends Model
     public function getTypeBadgeAttribute()
     {
         $badges = [
-          
+            'ancien_cc' => 'badge-primary',
             'ancien_ds' => 'badge-info',
             'session_normale' => 'badge-danger',
             'session_rattrapage' => 'badge-warning',
@@ -153,20 +171,29 @@ class Resource extends Model
         return $icons[$extension] ?? 'fa-file text-secondary';
     }
 
-    // Scopes
+   
     public function scopeActive($query)
     {
-        return $query->where('is_active', true);
+        return $query->where('status', 'active');
     }
 
     public function scopePublic($query)
     {
-        return $query->where('is_public', true);
+        return $query->where('visibility', 'public');
     }
 
     public function scopeOfClass($query, $classId)
     {
-        return $query->where('school_class_id', $classId);
+        return $query->whereHas('schoolClasses', function($q) use ($classId) {
+            $q->where('school_class_id', $classId);
+        });
+    }
+
+    public function scopeOfClasses($query, array $classIds)
+    {
+        return $query->whereHas('schoolClasses', function($q) use ($classIds) {
+            $q->whereIn('school_class_id', $classIds);
+        });
     }
 
     public function scopeOfSubject($query, $subjectId)
@@ -207,7 +234,7 @@ class Resource extends Model
     // Méthodes utilitaires
     public function isAvailable()
     {
-        if (!$this->is_active) return false;
+        if ($this->status !== 'active') return false;
         
         $now = now();
         
@@ -227,13 +254,13 @@ class Resource extends Model
         if (!$this->isAvailable()) return false;
         
         // Admin et Scolarité ont toujours accès
-        if (in_array($user->role, ['admin', 'scolarite','gestionnaire_scolarite'])) {
+        if (in_array($user->role, ['admin', 'chef_scolarite', 'gestionnaire_scolarite'])) {
             return true;
         }
         
-        // Étudiant: vérifier qu'il est dans la bonne classe
-        if ($user->role === 'etudiant') {
-            return $user->school_class_id == $this->school_class_id;
+        // Étudiant: vérifier qu'il est dans l'une des classes autorisées
+        if ($user->role === 'etudiant' && $user->school_class_id) {
+            return $this->belongsToClass($user->school_class_id);
         }
         
         return false;

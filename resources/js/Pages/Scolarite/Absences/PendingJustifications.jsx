@@ -138,7 +138,7 @@ export default function PendingJustifications({ attendances }) {
                                                 <div className="col-6">
                                                     <strong>Matière:</strong>
                                                     <br />
-                                                    {attendance.subject.name}
+                                                    {attendance.course.name}
                                                 </div>
                                             </div>
                                             <div className="row mb-3">
@@ -327,7 +327,7 @@ export default function PendingJustifications({ attendances }) {
                                         ).toLocaleDateString("fr-FR")}
                                         <br />
                                         <strong>Matière:</strong>{" "}
-                                        {selectedAttendance.subject.name}
+                                        {selectedAttendance.course.name}
                                     </div>
 
                                     <div className="form-group">

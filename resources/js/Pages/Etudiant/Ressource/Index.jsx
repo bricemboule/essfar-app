@@ -10,21 +10,22 @@ export default function Index({
     filters,
     student,
 }) {
-    const [searchTerm, setSearchTerm] = useState(filters.search || "");
-    const [filterType, setFilterType] = useState(filters.type || "");
+    console.log(student);
+    const [searchTerm, setSearchTerm] = useState(filters?.search || "");
+    const [filterType, setFilterType] = useState(filters?.type || "");
     const [filterSubject, setFilterSubject] = useState(
-        filters.subject_id || ""
+        filters?.subject_id || ""
     );
     const [filterYear, setFilterYear] = useState(
-        filters.academic_year_id || ""
+        filters?.academic_year_id || ""
     );
     const [filterSemester, setFilterSemester] = useState(
-        filters.semester || ""
+        filters?.semester || ""
     );
 
     const handleSearch = () => {
         router.get(
-            route("student.resources.index"),
+            route("etudiant.resources.index"),
             {
                 search: searchTerm,
                 type: filterType,
@@ -45,7 +46,7 @@ export default function Index({
         setFilterSubject("");
         setFilterYear("");
         setFilterSemester("");
-        router.get(route("student.resources.index"));
+        router.get(route("etudiant.resources.index"));
     };
 
     const getTypeLabel = (type) => {
@@ -110,7 +111,7 @@ export default function Index({
                         <div className="col-sm-6">
                             <ol className="breadcrumb float-sm-right">
                                 <li className="breadcrumb-item">
-                                    <Link href={route("student.dashboard")}>
+                                    <Link href={route("etudiant.dashboard")}>
                                         Dashboard
                                     </Link>
                                 </li>
@@ -337,7 +338,7 @@ export default function Index({
                                         </button>
                                         <Link
                                             href={route(
-                                                "student.resources.statistics"
+                                                "etudiant.resources.statistics"
                                             )}
                                             className="btn btn-outline-info"
                                         >
@@ -447,7 +448,7 @@ export default function Index({
                                             <div className="btn-group btn-group-sm w-100">
                                                 <Link
                                                     href={route(
-                                                        "student.resources.show",
+                                                        "etudiant.resources.show",
                                                         resource.id
                                                     )}
                                                     className="btn btn-info"
@@ -457,7 +458,7 @@ export default function Index({
                                                 </Link>
                                                 <a
                                                     href={route(
-                                                        "student.resources.download",
+                                                        "etudiant.resources.download",
                                                         resource.id
                                                     )}
                                                     className="btn btn-success"

@@ -27,7 +27,6 @@ return new class extends Migration
             
             // Relations
             $table->foreignId('course_id')->constrained()->onDelete('cascade');
-            $table->foreignId('school_class_id')->constrained()->onDelete('cascade');
             $table->foreignId('academic_year_id')->constrained()->onDelete('cascade');
             $table->foreignId('uploaded_by')->constrained('users')->onDelete('cascade');
             

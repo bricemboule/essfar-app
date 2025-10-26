@@ -4,25 +4,20 @@ import { Head, Link } from "@inertiajs/react";
 
 export default function Dashboard({
     statistics,
-    weeklySchedules,
+    weeklySchedulesByClass,
+    classes,
     courseDistribution,
     classroomUtilization,
     pendingEnrollments,
     scheduleNotifications,
     alerts,
 }) {
-    console.log({
-        statistics,
-        weeklySchedules,
-        courseDistribution,
-        classroomUtilization,
-        pendingEnrollments,
-        scheduleNotifications,
-        alerts,
-    });
-
     const [currentStats, setCurrentStats] = useState(statistics || {});
     const [refreshing, setRefreshing] = useState(false);
+    const [selectedClass, setSelectedClass] = useState(
+        classes && classes.length > 0 ? classes[0].id : null
+    );
+    const [viewMode, setViewMode] = useState("by-class"); // 'by-class' ou 'consolidated'
 
     // Refresh data every 5 minutes for schedule-related data
     useEffect(() => {
@@ -139,6 +134,292 @@ export default function Dashboard({
         </div>
     );
 
+    // Composant pour afficher le planning d'une classe
+    // Composant pour afficher le planning d'une classe
+    const ClassScheduleGrid = ({ schedules }) => {
+        if (!schedules || schedules.length === 0) {
+            return (
+                <div className="text-center py-5 text-muted">
+                    <i className="fas fa-calendar-times fa-3x mb-3"></i>
+                    <h5>Aucun planning disponible</h5>
+                    <p>
+                        Aucun cours n'est programmé pour cette classe cette
+                        semaine.
+                    </p>
+                </div>
+            );
+        }
+
+        return (
+            <div className="schedule-grid">
+                <div className="schedule-header">
+                    <div className="time-header">Horaire</div>
+                    {[
+                        "Lundi",
+                        "Mardi",
+                        "Mercredi",
+                        "Jeudi",
+                        "Vendredi",
+                        "Samedi",
+                        "Dimanche",
+                    ].map((day) => (
+                        <div key={day} className="day-column">
+                            {day}
+                        </div>
+                    ))}
+                </div>
+                <div className="schedule-body">
+                    {schedules.map((timeSlot, index) => (
+                        <div key={index} className="schedule-row">
+                            <div className="time-slot">
+                                <strong>{timeSlot.time}</strong>
+                            </div>
+                            {timeSlot.days.map((daySchedule, dayIndex) => (
+                                <div key={dayIndex} className="day-schedule">
+                                    {daySchedule.courses &&
+                                    daySchedule.courses.length > 0 ? (
+                                        daySchedule.courses.map(
+                                            (course, courseIndex) => (
+                                                <div
+                                                    key={courseIndex}
+                                                    className={`course-block bg-${
+                                                        course.color ||
+                                                        "primary"
+                                                    } text-white`}
+                                                    title={`${course.name} - Salle ${course.classroom} - ${course.teacher}`}
+                                                >
+                                                    <div className="course-name font-weight-bold">
+                                                        {course.name}
+                                                    </div>
+                                                    <div className="course-details">
+                                                        <small>
+                                                            📍{" "}
+                                                            {course.classroom}
+                                                        </small>
+                                                        <br />
+                                                        <small>
+                                                            👤 {course.teacher}
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            )
+                                        )
+                                    ) : (
+                                        <div className="empty-slot text-muted text-center">
+                                            <small>
+                                                {daySchedule.is_licence ? (
+                                                    <>
+                                                        <i className="fas fa-book mr-1"></i>
+                                                        Étude
+                                                    </>
+                                                ) : (
+                                                    "Libre"
+                                                )}
+                                            </small>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
+    // Vue consolidée - Toutes les classes en même temps
+    const ConsolidatedView = () => {
+        if (!classes || classes.length === 0) {
+            return (
+                <div className="text-center py-5 text-muted">
+                    <i className="fas fa-exclamation-circle fa-3x mb-3"></i>
+                    <h5>Aucune classe disponible</h5>
+                </div>
+            );
+        }
+
+        return (
+            <div className="consolidated-view">
+                {classes.map((classItem) => {
+                    const classSchedules =
+                        weeklySchedulesByClass[classItem.id] || [];
+                    const hasSchedules = classSchedules.some((slot) =>
+                        slot.days.some(
+                            (day) => day.courses && day.courses.length > 0
+                        )
+                    );
+
+                    // Vérifier si c'est une classe de Licence
+                    const isLicence =
+                        classItem.cycle &&
+                        classItem.cycle.toLowerCase() === "licence";
+
+                    return (
+                        <div
+                            key={classItem.id}
+                            className="class-schedule-compact mb-4"
+                        >
+                            <div className="class-header bg-light p-3 d-flex justify-content-between align-items-center">
+                                <h5 className="mb-0">
+                                    <i className="fas fa-users mr-2 text-primary"></i>
+                                    {classItem.name}
+                                    <span className="badge badge-info ml-2">
+                                        {classItem.students_count || 0}{" "}
+                                        étudiants
+                                    </span>
+                                    {isLicence && (
+                                        <span className="badge badge-warning ml-2">
+                                            <i className="fas fa-book mr-1"></i>
+                                            Licence
+                                        </span>
+                                    )}
+                                </h5>
+                                <Link
+                                    href={`/schedules/class/${classItem.id}`}
+                                    className="btn btn-sm btn-outline-primary"
+                                >
+                                    <i className="fas fa-eye mr-1"></i>
+                                    Voir détails
+                                </Link>
+                            </div>
+
+                            {hasSchedules || isLicence ? (
+                                <div className="compact-schedule-grid">
+                                    <table className="table table-bordered table-sm mb-0">
+                                        <thead>
+                                            <tr className="bg-light">
+                                                <th style={{ width: "80px" }}>
+                                                    Horaire
+                                                </th>
+                                                {[
+                                                    "Lun",
+                                                    "Mar",
+                                                    "Mer",
+                                                    "Jeu",
+                                                    "Ven",
+                                                    "Sam",
+                                                    "Dim",
+                                                ].map((day) => (
+                                                    <th
+                                                        key={day}
+                                                        className="text-center"
+                                                    >
+                                                        {day}
+                                                    </th>
+                                                ))}
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {classSchedules.map(
+                                                (timeSlot, index) => (
+                                                    <tr key={index}>
+                                                        <td className="text-center align-middle bg-light">
+                                                            <small>
+                                                                <strong>
+                                                                    {
+                                                                        timeSlot.time
+                                                                    }
+                                                                </strong>
+                                                            </small>
+                                                        </td>
+                                                        {timeSlot.days.map(
+                                                            (
+                                                                daySchedule,
+                                                                dayIndex
+                                                            ) => (
+                                                                <td
+                                                                    key={
+                                                                        dayIndex
+                                                                    }
+                                                                    className="p-1"
+                                                                >
+                                                                    {daySchedule.courses &&
+                                                                    daySchedule
+                                                                        .courses
+                                                                        .length >
+                                                                        0 ? (
+                                                                        daySchedule.courses.map(
+                                                                            (
+                                                                                course,
+                                                                                courseIndex
+                                                                            ) => (
+                                                                                <div
+                                                                                    key={
+                                                                                        courseIndex
+                                                                                    }
+                                                                                    className={`compact-course-block bg-${
+                                                                                        course.color ||
+                                                                                        "primary"
+                                                                                    } text-white`}
+                                                                                    title={`${course.name} - ${course.classroom} - ${course.teacher}`}
+                                                                                >
+                                                                                    <div
+                                                                                        style={{
+                                                                                            fontSize:
+                                                                                                "10px",
+                                                                                            fontWeight:
+                                                                                                "bold",
+                                                                                        }}
+                                                                                    >
+                                                                                        {
+                                                                                            course.name
+                                                                                        }
+                                                                                    </div>
+                                                                                    <div
+                                                                                        style={{
+                                                                                            fontSize:
+                                                                                                "9px",
+                                                                                        }}
+                                                                                    >
+                                                                                        {
+                                                                                            course.classroom
+                                                                                        }
+                                                                                    </div>
+                                                                                </div>
+                                                                            )
+                                                                        )
+                                                                    ) : (
+                                                                        <div
+                                                                            className="text-center text-muted"
+                                                                            style={{
+                                                                                fontSize:
+                                                                                    "9px",
+                                                                            }}
+                                                                        >
+                                                                            {daySchedule.is_licence ? (
+                                                                                <span className="text-warning">
+                                                                                    <i className="fas fa-book"></i>{" "}
+                                                                                    Étude
+                                                                                </span>
+                                                                            ) : (
+                                                                                "-"
+                                                                            )}
+                                                                        </div>
+                                                                    )}
+                                                                </td>
+                                                            )
+                                                        )}
+                                                    </tr>
+                                                )
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <div className="text-center py-3 text-muted">
+                                    <small>
+                                        <i className="fas fa-calendar-times mr-1"></i>
+                                        Aucun cours programmé
+                                    </small>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
     return (
         <AdminLayout title="Dashboard Chef de Scolarité">
             <Head title="Dashboard Scolarité" />
@@ -254,7 +535,37 @@ export default function Dashboard({
                                         Planning de la Semaine
                                     </h3>
                                     <div className="card-tools">
-                                        <div className="btn-group">
+                                        {/* Toggle View Mode */}
+                                        <div className="btn-group mr-2">
+                                            <button
+                                                className={`btn btn-xs ${
+                                                    viewMode === "by-class"
+                                                        ? "btn-primary"
+                                                        : "btn-outline-primary"
+                                                }`}
+                                                onClick={() =>
+                                                    setViewMode("by-class")
+                                                }
+                                                title="Vue par classe"
+                                            >
+                                                <i className="fas fa-layer-group"></i>
+                                            </button>
+                                            <button
+                                                className={`btn btn-xs ${
+                                                    viewMode === "consolidated"
+                                                        ? "btn-primary"
+                                                        : "btn-outline-primary"
+                                                }`}
+                                                onClick={() =>
+                                                    setViewMode("consolidated")
+                                                }
+                                                title="Vue consolidée"
+                                            >
+                                                <i className="fas fa-th-large"></i>
+                                            </button>
+                                        </div>
+
+                                        <div className="btn-group mr-2">
                                             <button className="btn btn-tool btn-sm">
                                                 <i className="fas fa-chevron-left"></i>
                                             </button>
@@ -265,6 +576,7 @@ export default function Dashboard({
                                                 <i className="fas fa-chevron-right"></i>
                                             </button>
                                         </div>
+
                                         <button
                                             type="button"
                                             className="btn btn-tool"
@@ -274,104 +586,85 @@ export default function Dashboard({
                                         </button>
                                     </div>
                                 </div>
-                                <div className="card-body p-0">
-                                    <div className="schedule-grid">
-                                        <div className="schedule-header">
-                                            {[
-                                                "Lundi",
-                                                "Mardi",
-                                                "Mercredi",
-                                                "Jeudi",
-                                                "Vendredi",
-                                                "Samedi",
-                                                "Dimanche",
-                                            ].map((day) => (
-                                                <div
-                                                    key={day}
-                                                    className="day-column"
-                                                >
-                                                    {day}
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <div className="schedule-body">
-                                            {weeklySchedules &&
-                                                weeklySchedules.map(
-                                                    (timeSlot, index) => (
-                                                        <div
-                                                            key={index}
-                                                            className="schedule-row"
+
+                                {/* Onglets des classes - Seulement en mode "by-class" */}
+                                {viewMode === "by-class" &&
+                                    classes &&
+                                    classes.length > 0 && (
+                                        <div className="card-header p-0 border-bottom-0">
+                                            <ul
+                                                className="nav nav-tabs"
+                                                role="tablist"
+                                            >
+                                                {classes.map((classItem) => (
+                                                    <li
+                                                        key={classItem.id}
+                                                        className="nav-item"
+                                                    >
+                                                        <a
+                                                            className={`nav-link ${
+                                                                selectedClass ===
+                                                                classItem.id
+                                                                    ? "active"
+                                                                    : ""
+                                                            }`}
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                setSelectedClass(
+                                                                    classItem.id
+                                                                );
+                                                            }}
+                                                            href="#"
+                                                            role="tab"
                                                         >
-                                                            <div className="time-slot">
-                                                                <strong>
-                                                                    {
-                                                                        timeSlot.time
-                                                                    }
-                                                                </strong>
-                                                            </div>
-                                                            {timeSlot.days.map(
-                                                                (
-                                                                    daySchedule,
-                                                                    dayIndex
-                                                                ) => (
-                                                                    <div
-                                                                        key={
-                                                                            dayIndex
-                                                                        }
-                                                                        className="day-schedule"
-                                                                    >
-                                                                        {daySchedule.courses?.map(
-                                                                            (
-                                                                                course,
-                                                                                courseIndex
-                                                                            ) => (
-                                                                                <div
-                                                                                    key={
-                                                                                        courseIndex
-                                                                                    }
-                                                                                    className={`course-block bg-${
-                                                                                        course.color ||
-                                                                                        "primary"
-                                                                                    } text-white`}
-                                                                                    style={{
-                                                                                        borderRadius:
-                                                                                            "4px",
-                                                                                        padding:
-                                                                                            "4px 8px",
-                                                                                        margin: "1px",
-                                                                                        fontSize:
-                                                                                            "11px",
-                                                                                    }}
-                                                                                    title={`${course.name} - Salle ${course.classroom} - ${course.teacher}`}
-                                                                                >
-                                                                                    <div className="course-name font-weight-bold">
-                                                                                        {
-                                                                                            course.name
-                                                                                        }
-                                                                                    </div>
-                                                                                    <div className="course-details">
-                                                                                        {
-                                                                                            course.classroom
-                                                                                        }
-                                                                                    </div>
-                                                                                </div>
-                                                                            )
-                                                                        ) || (
-                                                                            <div className="empty-slot text-muted text-center">
-                                                                                <small>
-                                                                                    Libre
-                                                                                </small>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                )
-                                                            )}
-                                                        </div>
-                                                    )
-                                                )}
+                                                            <i className="fas fa-users mr-1"></i>
+                                                            {classItem.name}
+                                                            <span className="badge badge-info ml-2">
+                                                                {classItem.students_count ||
+                                                                    0}
+                                                            </span>
+                                                        </a>
+                                                    </li>
+                                                ))}
+                                            </ul>
                                         </div>
-                                    </div>
+                                    )}
+
+                                <div className="card-body p-0">
+                                    {viewMode === "by-class" ? (
+                                        // Vue par classe avec onglets
+                                        weeklySchedulesByClass &&
+                                        weeklySchedulesByClass[
+                                            selectedClass
+                                        ] ? (
+                                            <ClassScheduleGrid
+                                                schedules={
+                                                    weeklySchedulesByClass[
+                                                        selectedClass
+                                                    ]
+                                                }
+                                            />
+                                        ) : (
+                                            <div className="text-center py-5 text-muted">
+                                                <i className="fas fa-calendar-times fa-3x mb-3"></i>
+                                                <h5>
+                                                    Aucun planning disponible
+                                                </h5>
+                                                <p>
+                                                    Aucun cours n'est programmé
+                                                    pour cette classe cette
+                                                    semaine.
+                                                </p>
+                                            </div>
+                                        )
+                                    ) : (
+                                        // Vue consolidée
+                                        <div style={{ padding: "15px" }}>
+                                            <ConsolidatedView />
+                                        </div>
+                                    )}
                                 </div>
+
                                 <div className="card-footer">
                                     <div className="row">
                                         <div className="col-6">
@@ -525,6 +818,7 @@ export default function Dashboard({
                                 </div>
                                 <div className="card-body">
                                     {courseDistribution &&
+                                    courseDistribution.length > 0 ? (
                                         courseDistribution.map(
                                             (course, index) => {
                                                 const colors = [
@@ -592,7 +886,13 @@ export default function Dashboard({
                                                     </div>
                                                 );
                                             }
-                                        )}
+                                        )
+                                    ) : (
+                                        <div className="text-center text-muted py-3">
+                                            <i className="fas fa-chart-pie fa-2x mb-2"></i>
+                                            <div>Aucune donnée disponible</div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -606,6 +906,7 @@ export default function Dashboard({
                                 </div>
                                 <div className="card-body">
                                     {classroomUtilization &&
+                                    classroomUtilization.length > 0 ? (
                                         classroomUtilization.map(
                                             (room, index) => (
                                                 <div
@@ -662,7 +963,13 @@ export default function Dashboard({
                                                     </div>
                                                 </div>
                                             )
-                                        )}
+                                        )
+                                    ) : (
+                                        <div className="text-center text-muted py-3">
+                                            <i className="fas fa-door-open fa-2x mb-2"></i>
+                                            <div>Aucune salle disponible</div>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="card-footer">
                                     <Link
@@ -793,75 +1100,295 @@ export default function Dashboard({
             </section>
 
             <style>{`
-                .schedule-grid {
-                    display: flex;
-                    flex-direction: column;
-                    background: #f8f9fa;
-                }
+            /* Schedule Grid Styles */
+            .schedule-grid {
+                display: flex;
+                flex-direction: column;
+                background: #f8f9fa;
+            }
 
-                .schedule-header {
-                    display: grid;
-                    grid-template-columns: 80px repeat(6, 1fr);
-                    gap: 1px;
-                    background: #fff;
-                    font-weight: bold;
-                    text-align: center;
-                    padding: 8px 0;
-                    border-bottom: 2px solid #dee2e6;
-                }
+            .schedule-header {
+                display: grid;
+                grid-template-columns: 100px repeat(7, 1fr);
+                gap: 1px;
+                background: #fff;
+                border-bottom: 2px solid #dee2e6;
+            }
 
-                .schedule-body {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 1px;
-                }
+            .time-header {
+                padding: 10px 8px;
+                font-size: 13px;
+                font-weight: 600;
+                text-align: center;
+                background: #e9ecef;
+                color: #495057;
+                border-right: 1px solid #dee2e6;
+            }
 
+            .day-column {
+                padding: 10px 8px;
+                font-size: 13px;
+                font-weight: 600;
+                text-align: center;
+                background: #f8f9fa;
+                color: #495057;
+                border-right: 1px solid #dee2e6;
+            }
+
+            .day-column:last-child {
+                border-right: none;
+            }
+
+            .schedule-body {
+                display: flex;
+                flex-direction: column;
+                gap: 1px;
+            }
+
+            .schedule-row {
+                display: grid;
+                grid-template-columns: 100px repeat(7, 1fr);
+                gap: 1px;
+                min-height: 80px;
+            }
+
+            .time-slot {
+                background: #e9ecef;
+                padding: 8px 4px;
+                text-align: center;
+                font-size: 12px;
+                border-right: 1px solid #dee2e6;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .day-schedule {
+                background: #fff;
+                padding: 6px;
+                min-height: 80px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                border-right: 1px solid #e9ecef;
+            }
+
+            .day-schedule:last-child {
+                border-right: none;
+            }
+
+            .course-block {
+                border-radius: 6px !important;
+                margin: 2px 0;
+                padding: 6px 8px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+                font-size: 11px;
+            }
+
+            .course-block:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+            }
+
+            .course-name {
+                font-weight: bold;
+                margin-bottom: 3px;
+            }
+
+            .course-details {
+                line-height: 1.4;
+            }
+
+            .empty-slot {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 100%;
+                background: #f8f9fa;
+                border-radius: 4px;
+            }
+
+            .border-left-warning {
+                border-left: 4px solid #ffc107 !important;
+            }
+
+            /* Tabs Styles */
+            .nav-tabs {
+                border-bottom: none;
+                flex-wrap: wrap;
+            }
+
+            .nav-tabs .nav-link {
+                border: none;
+                border-bottom: 3px solid transparent;
+                color: #6c757d;
+                font-weight: 500;
+                cursor: pointer;
+                padding: 10px 15px;
+                transition: all 0.3s ease;
+            }
+
+            .nav-tabs .nav-link:hover {
+                border-bottom-color: #dee2e6;
+                background-color: #f8f9fa;
+            }
+
+            .nav-tabs .nav-link.active {
+                color: #007bff;
+                border-bottom-color: #007bff;
+                background: transparent;
+            }
+
+            /* Consolidated View Styles */
+            .consolidated-view {
+                max-height: 70vh;
+                overflow-y: auto;
+            }
+
+            .class-schedule-compact {
+                border: 1px solid #dee2e6;
+                border-radius: 8px;
+                overflow: hidden;
+                background: #fff;
+            }
+
+            .class-header {
+                border-bottom: 2px solid #dee2e6;
+            }
+
+            .compact-schedule-grid {
+                overflow-x: auto;
+            }
+
+            .compact-schedule-grid table {
+                font-size: 11px;
+            }
+
+            .compact-course-block {
+                padding: 4px 6px;
+                border-radius: 4px;
+                margin: 1px 0;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+
+            .compact-course-block:hover {
+                transform: scale(1.05);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            }
+
+            /* Responsive adjustments */
+            @media (max-width: 768px) {
+                .schedule-header,
                 .schedule-row {
-                    display: grid;
-                    grid-template-columns: 80px repeat(6, 1fr);
-                    gap: 1px;
-                    min-height: 60px;
-                }
-
-                .time-slot {
-                    background: #fff;
-                    padding: 8px 4px;
-                    text-align: center;
-                    font-size: 12px;
-                    border-right: 1px solid #dee2e6;
-                }
-
-                .day-schedule {
-                    background: #fff;
-                    padding: 4px;
-                    min-height: 60px;
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: center;
+                    grid-template-columns: 70px repeat(7, minmax(80px, 1fr));
                 }
 
                 .course-block {
-                    border-radius: 4px !important;
-                    margin: 1px 0;
-                    cursor: pointer;
-                    transition: transform 0.2s;
+                    font-size: 9px;
+                    padding: 4px 6px;
                 }
 
-                .course-block:hover {
-                    transform: scale(1.02);
+                .nav-tabs .nav-link {
+                    padding: 8px 10px;
+                    font-size: 12px;
+                }
+            }
+
+            /* ScrollBar Styles */
+            .consolidated-view::-webkit-scrollbar,
+            .card-body::-webkit-scrollbar {
+                width: 8px;
+            }
+
+            .consolidated-view::-webkit-scrollbar-track,
+            .card-body::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 10px;
+            }
+
+            .consolidated-view::-webkit-scrollbar-thumb,
+            .card-body::-webkit-scrollbar-thumb {
+                background: #888;
+                border-radius: 10px;
+            }
+
+            .consolidated-view::-webkit-scrollbar-thumb:hover,
+            .card-body::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+
+            /* Animation pour le chargement */
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .course-block,
+            .compact-course-block {
+                animation: fadeIn 0.3s ease;
+            }
+
+            /* Colors for different course types */
+            .bg-primary {
+                background-color: #007bff !important;
+            }
+            
+            .bg-success {
+                background-color: #28a745 !important;
+            }
+
+            .bg-info {
+                background-color: #17a2b8 !important;
+            }
+
+            .bg-warning {
+                background-color: #ffc107 !important;
+                color: #212529 !important;
+            }
+
+            .bg-danger {
+                background-color: #dc3545 !important;
+            }
+
+            .bg-secondary {
+                background-color: #6c757d !important;
+            }
+
+            .bg-indigo {
+                background-color: #6610f2 !important;
+            }
+
+            .bg-purple {
+                background-color: #6f42c1 !important;
+            }
+
+            /* Print styles */
+            @media print {
+                .card-tools,
+                .btn,
+                .alert-dismissible .close {
+                    display: none !important;
                 }
 
-                .empty-slot {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    height: 100%;
+                .schedule-grid {
+                    page-break-inside: avoid;
                 }
 
-                .border-left-warning {
-                    border-left: 4px solid #ffc107 !important;
+                .course-block {
+                    box-shadow: none !important;
+                    border: 1px solid #dee2e6 !important;
                 }
-            `}</style>
+            }
+        `}</style>
         </AdminLayout>
     );
 }

@@ -19,6 +19,7 @@ class User extends Authenticatable
         'password',
         'role',
         'matricule',
+        'school_class_id',
         'telephone',
         'adresse',
         'date_naissance',
@@ -77,6 +78,19 @@ class User extends Authenticatable
     ];
 
     // Relations
+    public function schoolClass()
+{
+    return $this->belongsTo(SchoolClass::class, 'school_class_id');
+}
+
+
+// Relation pour obtenir la classe active actuelle
+public function activeEnrollment()
+{
+    return $this->hasOne(StudentEnrollment::class, 'student_id')
+                ->where('status', 'active')
+                ->latest('enrollment_date');
+}
     public function studentEnrollments()
     {
         return $this->hasMany(StudentEnrollment::class, 'student_id');

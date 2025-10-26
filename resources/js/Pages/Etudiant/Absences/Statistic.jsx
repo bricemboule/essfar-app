@@ -23,14 +23,14 @@ export default function Statistics({
                         <div className="col-sm-6">
                             <ol className="breadcrumb float-sm-right">
                                 <li className="breadcrumb-item">
-                                    <Link href={route("student.dashboard")}>
+                                    <Link href={route("etudiant.dashboard")}>
                                         Dashboard
                                     </Link>
                                 </li>
                                 <li className="breadcrumb-item">
                                     <Link
                                         href={route(
-                                            "student.attendances.index"
+                                            "etudiant.attendances.index"
                                         )}
                                     >
                                         Absences et retards
@@ -259,7 +259,7 @@ export default function Statistics({
                                                                     <strong>
                                                                         {
                                                                             data
-                                                                                .subject
+                                                                                .course
                                                                                 .name
                                                                         }
                                                                     </strong>
@@ -396,7 +396,7 @@ export default function Statistics({
                     <div className="row">
                         <div className="col-12">
                             <Link
-                                href={route("student.attendances.index")}
+                                href={route("etudiant.attendances.index")}
                                 className="btn btn-secondary"
                             >
                                 <i className="fas fa-arrow-left mr-1"></i>
