@@ -25,7 +25,7 @@ export default function Show({
                 `Êtes-vous sûr de vouloir supprimer l'enseignant ${teacher.name} ${teacher.prenom} ?`
             )
         ) {
-            router.delete(route("academic.enseignants.destroy", teacher.id));
+            router.delete(route("scolarite.enseignants.destroy", teacher.id));
         }
     };
 
@@ -35,7 +35,7 @@ export default function Show({
                 `Voulez-vous suspendre l'enseignant ${teacher.name} ${teacher.prenom} ?`
             )
         ) {
-            router.patch(route("academic.enseignants.update", teacher.id), {
+            router.patch(route("scolarite.enseignants.update", teacher.id), {
                 statut: "inactif",
             });
         }
@@ -61,7 +61,7 @@ export default function Show({
                                 <li className="breadcrumb-item">
                                     <Link
                                         href={route(
-                                            "academic.enseignants.index"
+                                            "scolarite.enseignants.index"
                                         )}
                                     >
                                         Enseignants
@@ -135,7 +135,7 @@ export default function Show({
                                     <div className="btn-group btn-group-sm w-100 mb-2">
                                         <Link
                                             href={route(
-                                                "academic.enseignants.edit",
+                                                "scolarite.enseignants.edit",
                                                 teacher.id
                                             )}
                                             className="btn btn-primary"
@@ -146,7 +146,7 @@ export default function Show({
                                         {currentContract && (
                                             <a
                                                 href={route(
-                                                    "academic.contracts.download",
+                                                    "scolarite.contracts.download",
                                                     currentContract.id
                                                 )}
                                                 className="btn btn-success"
@@ -792,7 +792,7 @@ export default function Show({
                                                     <div className="mt-3">
                                                         <a
                                                             href={route(
-                                                                "academic.contracts.download",
+                                                                "scolarite.contracts.download",
                                                                 currentContract.id
                                                             )}
                                                             className="btn btn-success"
@@ -804,7 +804,7 @@ export default function Show({
                                                         </a>
                                                         <Link
                                                             href={route(
-                                                                "academic.enseignants.create-contract",
+                                                                "scolarite.enseignants.create-contract",
                                                                 teacher.id
                                                             )}
                                                             className="btn btn-primary ml-2"
@@ -822,7 +822,7 @@ export default function Show({
                                                     </p>
                                                     <Link
                                                         href={route(
-                                                            "academic.enseignants.create-contract",
+                                                            "scolarite.enseignants.create-contract",
                                                             teacher.id
                                                         )}
                                                         className="btn btn-primary"

@@ -35,7 +35,7 @@ export default function Index({ classes, academicYears, auth }) {
 
     const confirmDelete = () => {
         if (classToDelete) {
-            destroy(route("academic.classes.destroy", classToDelete.id), {
+            destroy(route("scolarite.classes.destroy", classToDelete.id), {
                 onSuccess: () => {
                     setShowDeleteModal(false);
                     setClassToDelete(null);
@@ -237,7 +237,7 @@ export default function Index({ classes, academicYears, auth }) {
                             <div className="col-md-2 d-flex align-items-end">
                                 <div className="form-group mb-0 w-100">
                                     <Link
-                                        href={route("academic.classes.create")}
+                                        href={route("scolarite.classes.create")}
                                         className="btn btn-primary btn-block"
                                     >
                                         <i className="fas fa-plus mr-1"></i>
@@ -377,7 +377,7 @@ export default function Index({ classes, academicYears, auth }) {
                                                     <div className="btn-group btn-group-sm">
                                                         <Link
                                                             href={route(
-                                                                "academic.classes.show",
+                                                                "scolarite.classes.show",
                                                                 schoolClass.id
                                                             )}
                                                             className="btn btn-info"
@@ -387,7 +387,7 @@ export default function Index({ classes, academicYears, auth }) {
                                                         </Link>
                                                         <Link
                                                             href={route(
-                                                                "academic.classes.edit",
+                                                                "scolarite.classes.edit",
                                                                 schoolClass.id
                                                             )}
                                                             className="btn btn-warning"

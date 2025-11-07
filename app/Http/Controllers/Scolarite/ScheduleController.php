@@ -9,30 +9,35 @@ use App\Models\SchoolClass;
 use App\Models\Classroom;
 use App\Models\User;
 use App\Models\AcademicYear;
+use App\Services\ScheduleReplicationService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\EnseignantPlanningMail;
-use App\Mail\ClassPlanningMail;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Jobs\SendClassPlanningJob;
 
 class ScheduleController extends Controller
 {
+    protected $replicationService;
+
+    public function __construct(ScheduleReplicationService $replicationService)
+    {
+        $this->replicationService = $replicationService;
+    }
+
     public function index(Request $request)
     {
-        
         $query = Schedule::with([
             'course', 
             'teacher', 
             'schoolClass', 
             'classroom', 
-            'academicYear'
+            'academicYear',
+            'replicatedSchedules'
         ]);
 
-        // Filtres
         if ($request->teacher_id) {
             $query->where('teacher_id', $request->teacher_id);
         }
@@ -63,9 +68,17 @@ class ScheduleController extends Controller
             $query->forWeek($request->week_start, $request->week_end);
         }
 
+       if (!$request->has('show_replications')) {
+          
+        }
+
         $schedules = $query->orderBy('start_time', 'desc')->paginate(20);
 
-        // Calculer les statistiques
+        $schedules->getCollection()->transform(function($schedule) {
+            $schedule->replications_count = $schedule->replicatedSchedules()->count();
+            return $schedule;
+        });
+
         $stats = [
             'total' => Schedule::count(),
             'completed' => Schedule::where('status', 'completed')->count(),
@@ -73,6 +86,7 @@ class ScheduleController extends Controller
                 ->where('start_time', '>', now())
                 ->count(),
             'cancelled' => Schedule::where('status', 'cancelled')->count(),
+            'replicated' => Schedule::where('is_replicated', true)->count(),
         ];
 
         return Inertia::render('Scolarite/Planning/Index', [
@@ -80,7 +94,7 @@ class ScheduleController extends Controller
             'teachers' => User::where('role', 'enseignant')->get(['id', 'name', 'email']),
             'classes' => SchoolClass::with('academicYear')->get(),
             'courses' => Course::with('academicYear')->get(['id', 'name', 'code']),
-            'filters' => $request->only(['teacher_id', 'class_id', 'status', 'search', 'week_start', 'week_end']),
+            'filters' => $request->only(['teacher_id', 'class_id', 'status', 'search', 'week_start', 'week_end', 'show_replications']),
             'stats' => $stats
         ]);
     }
@@ -96,6 +110,40 @@ class ScheduleController extends Controller
         ]);
     }
 
+    public function getCoursesByClass(SchoolClass $class)
+    {
+        $activeYear = AcademicYear::active()->first();
+
+        if (!$activeYear) {
+            return response()->json([]);
+        }
+
+        $courses = $class->courses()
+            ->wherePivot('academic_year_id', $activeYear->id)
+            ->with('teachers')
+            ->get(['courses.id', 'courses.name', 'courses.code', 'courses.total_hours']);
+
+        return response()->json($courses);
+    }
+
+    public function getClassesForCourse(Request $request, Course $course)
+    {
+        $classId = $request->class_id;
+        $activeYear = AcademicYear::active()->first();
+        
+        $classes = SchoolClass::whereHas('courses', function($query) use ($course, $activeYear) {
+            $query->where('courses.id', $course->id)
+                  ->where('class_courses.academic_year_id', $activeYear->id);
+        })
+        ->when($classId, function($query) use ($classId) {
+            $query->where('id', '!=', $classId);
+        })
+        ->with('academicYear')
+        ->get();
+
+        return response()->json($classes);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -106,42 +154,90 @@ class ScheduleController extends Controller
             'start_time' => 'required|date',
             'end_time' => 'required|date|after:start_time',
             'is_recurring' => 'boolean',
-            'notes' => 'nullable|string'
+            'notes' => 'nullable|string',
+            'replicate_to_other_classes' => 'boolean',
+            'replication_interval' => 'nullable|integer|min:0',
+            'use_default_classroom' => 'boolean',
         ]);
+
+      
 
         $startTime = Carbon::parse($validated['start_time']);
         $endTime = Carbon::parse($validated['end_time']);
 
-        // Vérifier les conflits
         if (Schedule::hasConflict($validated['teacher_id'], $validated['classroom_id'], $startTime, $endTime)) {
             return back()->withErrors(['conflict' => 'Conflit détecté : enseignant ou salle déjà occupé(e) sur ce créneau.']);
         }
 
         $academicYear = AcademicYear::active()->first();
 
-        $schedule = Schedule::create([
-            ...$validated,
-            'academic_year_id' => $academicYear->id,
-            'day_of_week' => $startTime->dayOfWeek ?: 7,
-            'week_number' => $startTime->week,
-            'status' => 'scheduled'
-        ]);
+        DB::beginTransaction();
+          dd($request->all());
 
-        // Si récurrent, créer les autres séances
-        if ($validated['is_recurring'] ?? false) {
-            $this->createRecurringSchedules($schedule, $academicYear);
+        try {
+            $schedule = Schedule::create([
+                'course_id' => $validated['course_id'],
+                'teacher_id' => $validated['teacher_id'],
+                'school_class_id' => $validated['school_class_id'],
+                'classroom_id' => $validated['classroom_id'],
+                'academic_year_id' => $academicYear->id,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'day_of_week' => $startTime->dayOfWeek ?: 7,
+                'week_number' => $startTime->week,
+                'status' => 'scheduled',
+                'is_recurring' => $validated['is_recurring'] ?? false,
+                'notes' => $validated['notes'] ?? null
+            ]);
+
+            $replicatedCount = 0;
+
+            if ($validated['replicate_to_other_classes'] ?? false) {
+                $replications = $this->replicationService->replicateSchedule($schedule, [
+                    'replicate' => true,
+                    'interval_minutes' => $validated['replication_interval'] ?? 0,
+                    'use_default_classroom' => $validated['use_default_classroom'] ?? false,
+                ]);
+                $replicatedCount = count($replications);
+            }
+
+            if ($validated['is_recurring'] ?? false) {
+                $this->createRecurringSchedules($schedule, $academicYear);
+            }
+
+            DB::commit();
+
+            $message = 'Séance programmée avec succès.';
+            if ($replicatedCount > 0) {
+                $message .= " Répliquée dans {$replicatedCount} autre(s) classe(s).";
+            }
+
+            return redirect()->route('scolarite.planning.schedules.index')
+                ->with('success', $message);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Erreur création planning: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Erreur lors de la création : ' . $e->getMessage()]);
         }
-
-        return redirect()->route('planning.index')
-            ->with('success', 'Séance programmée avec succès.');
     }
 
     public function show(Schedule $schedule)
     {
-        $schedule->load(['course', 'teacher', 'schoolClass', 'classroom']);
+        $schedule->load([
+            'course', 
+            'teacher', 
+            'schoolClass', 
+            'classroom',
+            'replicatedSchedules.schoolClass',
+            'parentSchedule'
+        ]);
 
         return Inertia::render('Scolarite/Planning/Show', [
-            'schedule' => $schedule
+            'schedule' => $schedule,
+            'replications' => $schedule->replicatedSchedules,
+            'isReplicated' => $schedule->is_replicated,
+            'parent' => $schedule->parentSchedule
         ]);
     }
 
@@ -157,6 +253,7 @@ class ScheduleController extends Controller
             'teachers' => User::where('role', 'enseignant')->get(['id', 'name']),
             'classes' => SchoolClass::with('academicYear')->get(),
             'classrooms' => Classroom::where('is_available', true)->get(),
+            'hasReplications' => $schedule->replicatedSchedules()->count() > 0,
         ]);
     }
 
@@ -173,26 +270,52 @@ class ScheduleController extends Controller
             'classroom_id' => 'required|exists:classrooms,id',
             'start_time' => 'required|date',
             'end_time' => 'required|date|after:start_time',
-            'notes' => 'nullable|string'
+            'notes' => 'nullable|string',
+            'update_replications' => 'boolean'
         ]);
 
         $startTime = Carbon::parse($validated['start_time']);
         $endTime = Carbon::parse($validated['end_time']);
 
-        // Vérifier les conflits (exclure cette séance)
         if (Schedule::hasConflict($validated['teacher_id'], $validated['classroom_id'], $startTime, $endTime, $schedule->id)) {
             return back()->withErrors(['conflict' => 'Conflit détecté : enseignant ou salle déjà occupé(e) sur ce créneau.']);
         }
 
-        $schedule->update([
-            ...$validated,
-            'day_of_week' => $startTime->dayOfWeek ?: 7,
-            'week_number' => $startTime->week,
-            'status' => 'rescheduled'
-        ]);
+        DB::beginTransaction();
 
-        return redirect()->route('planning.index')
-            ->with('success', 'Séance modifiée avec succès.');
+        try {
+            $schedule->update([
+                'course_id' => $validated['course_id'],
+                'teacher_id' => $validated['teacher_id'],
+                'school_class_id' => $validated['school_class_id'],
+                'classroom_id' => $validated['classroom_id'],
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'day_of_week' => $startTime->dayOfWeek ?: 7,
+                'week_number' => $startTime->week,
+                'status' => 'rescheduled',
+                'notes' => $validated['notes'] ?? $schedule->notes
+            ]);
+
+            $updatedCount = 0;
+            if ($schedule->isParent() && ($validated['update_replications'] ?? false)) {
+                $updatedCount = $this->replicationService->updateReplications($schedule, $validated);
+            }
+
+            DB::commit();
+
+            $message = 'Séance modifiée avec succès.';
+            if ($updatedCount > 0) {
+                $message .= " {$updatedCount} réplication(s) mise(s) à jour.";
+            }
+
+            return redirect()->route('scolarite.planning.schedules.index')
+                ->with('success', $message);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Erreur lors de la mise à jour : ' . $e->getMessage()]);
+        }
     }
 
     public function destroy(Schedule $schedule)
@@ -201,48 +324,113 @@ class ScheduleController extends Controller
             return back()->withErrors(['error' => 'Cette séance ne peut pas être supprimée.']);
         }
 
-        $schedule->delete();
+        DB::beginTransaction();
 
-        return redirect()->route('planning.index')
-            ->with('success', 'Séance supprimée avec succès.');
+        try {
+            $deletedCount = 0;
+
+            if ($schedule->isParent()) {
+                $deletedCount = $this->replicationService->deleteReplications($schedule);
+            }
+
+            $schedule->delete();
+
+            DB::commit();
+
+            $message = 'Séance supprimée avec succès.';
+            if ($deletedCount > 0) {
+                $message .= " {$deletedCount} réplication(s) supprimée(s).";
+            }
+
+            return redirect()->route('scolarite.planning.schedules.index')
+                ->with('success', $message);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Erreur lors de la suppression : ' . $e->getMessage()]);
+        }
     }
 
-    // Marquer une séance comme terminée
-public function markCompleted(Request $request, Schedule $schedule)
-{
-    
-    $request->validate([
-        'duration_hours' => 'required|numeric|min:0',
-        'notes' => 'nullable|string|max:500'
-    ]);
+    public function markCompleted(Request $request, Schedule $schedule)
+    {
+        $request->validate([
+            'duration_hours' => 'required|numeric|min:0',
+            'notes' => 'nullable|string|max:500',
+            'complete_replications' => 'boolean'
+        ]);
 
-    if ($schedule->start_time->gt(now())) {
-        return back()->withErrors(['error' => 'Cette séance n\'a pas encore eu lieu.']);
+        if ($schedule->start_time->gt(now())) {
+            return back()->withErrors(['error' => 'Cette séance n\'a pas encore eu lieu.']);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $schedule->update([
+                'status' => 'completed',
+                'completed_hours' => $request->duration_hours,
+                'completion_notes' => $request->notes
+            ]);
+
+            $completedCount = 0;
+            if ($schedule->isParent() && ($request->complete_replications ?? false)) {
+                foreach ($schedule->replicatedSchedules()->where('status', 'scheduled')->get() as $replication) {
+                    $replication->update([
+                        'status' => 'completed',
+                        'completed_hours' => $request->duration_hours,
+                        'completion_notes' => $request->notes
+                    ]);
+                    $completedCount++;
+                }
+            }
+
+            DB::commit();
+
+            $message = 'Séance marquée comme terminée avec ' . $request->duration_hours . ' heures effectuées.';
+            if ($completedCount > 0) {
+                $message .= " {$completedCount} réplication(s) également complétée(s).";
+            }
+
+            return back()->with('success', $message);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Erreur : ' . $e->getMessage()]);
+        }
     }
 
-    $schedule->update([
-        'status' => 'completed',
-        'completed_hours' => $request->duration_hours,
-        'completion_notes' => $request->notes
-    ]);
-
-    return back()->with('success', 'Séance marquée comme terminée avec ' . $request->duration_hours . ' heures effectuées.');
-
-}
-
-    // Annuler une séance
     public function cancel(Request $request, Schedule $schedule)
     {
         $request->validate([
-            'reason' => 'required|string|max:500'
+            'reason' => 'required|string|max:500',
+            'cancel_replications' => 'boolean'
         ]);
 
-        $schedule->markAsCancelled($request->reason);
+        DB::beginTransaction();
 
-        return back()->with('success', 'Séance annulée.');
+        try {
+            $schedule->markAsCancelled($request->reason);
+
+            $cancelledCount = 0;
+            if ($schedule->isParent() && ($request->cancel_replications ?? false)) {
+                $cancelledCount = $this->replicationService->cancelReplications($schedule, $request->reason);
+            }
+
+            DB::commit();
+
+            $message = 'Séance annulée.';
+            if ($cancelledCount > 0) {
+                $message .= " {$cancelledCount} réplication(s) également annulée(s).";
+            }
+
+            return back()->with('success', $message);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['error' => 'Erreur : ' . $e->getMessage()]);
+        }
     }
 
-    // Actions groupées
     public function bulkAction(Request $request)
     {
         $request->validate([
@@ -279,7 +467,6 @@ public function markCompleted(Request $request, Schedule $schedule)
         return back()->with('success', 'Action groupée effectuée avec succès.');
     }
 
-    // Plannings individuels
     public function teacherSchedule(Request $request, User $teacher)
     {
         $user = auth()->user();
@@ -324,38 +511,34 @@ public function markCompleted(Request $request, Schedule $schedule)
         ]);
     }
 
-    // Après la méthode classSchedule()
-public function exportClassSchedulePdf(Request $request, SchoolClass $class)
-{
-    $startDate = Carbon::parse($request->start_date);
-    $endDate = Carbon::parse($request->end_date);
+    public function exportClassSchedulePdf(Request $request, SchoolClass $class)
+    {
+        $startDate = Carbon::parse($request->start_date);
+        $endDate = Carbon::parse($request->end_date);
 
-    $schedules = Schedule::forClass($class->id)
-        ->forWeek($startDate, $endDate)
-        ->with(['course', 'teacher', 'classroom'])
-        ->orderBy('start_time')
-        ->get();
+        $schedules = Schedule::forClass($class->id)
+            ->forWeek($startDate, $endDate)
+            ->with(['course', 'teacher', 'classroom'])
+            ->orderBy('start_time')
+            ->get();
 
-    $academicYear = AcademicYear::active()->first();
+        $academicYear = AcademicYear::active()->first();
 
-    $data = [
-        'class' => $class,
-        'academicYear' => $academicYear,
-        'schedules' => $schedules,
-        'startDate' => $startDate->format('d/m/Y'),
-        'endDate' => $endDate->format('d/m/Y'),
-        'generatedDate' => now()->format('d/m/Y H:i'),
-    ];
+        $data = [
+            'class' => $class,
+            'academicYear' => $academicYear,
+            'schedules' => $schedules,
+            'startDate' => $startDate->format('d/m/Y'),
+            'endDate' => $endDate->format('d/m/Y'),
+            'generatedDate' => now()->format('d/m/Y H:i'),
+        ];
 
-    $pdf = Pdf::loadView('planning.class-schedule-pdf', $data)
-              ->setPaper('a4', 'landscape');
+        $pdf = Pdf::loadView('planning.class-schedule-pdf', $data)
+                  ->setPaper('a4', 'landscape');
 
-    return $pdf->download("emploi_temps_{$class->name}_{$startDate->format('Y-m-d')}.pdf");
-}
+        return $pdf->download("emploi_temps_{$class->name}_{$startDate->format('Y-m-d')}.pdf");
+    }
 
-
-
-    // Récapitulatif des heures
     public function hoursReport(Request $request)
     {
         $academicYear = AcademicYear::active()->first();
@@ -392,91 +575,83 @@ public function exportClassSchedulePdf(Request $request, SchoolClass $class)
         ]);
     }
 
-public function teacherEarningsReport(Request $request)
-{
-    $academicYear = AcademicYear::active()->first();
+    public function teacherEarningsReport(Request $request)
+    {
+        $academicYear = AcademicYear::active()->first();
 
-    $startDate = Carbon::parse($request->start_date ?? $academicYear->start_date);
-    $endDate   = Carbon::parse($request->end_date ?? now());
+        $startDate = Carbon::parse($request->start_date ?? $academicYear->start_date);
+        $endDate   = Carbon::parse($request->end_date ?? now());
 
-    $earnings = DB::table('users')
-        ->join('course_teachers', 'users.id', '=', 'course_teachers.teacher_id')
-        ->join('courses', 'course_teachers.course_id', '=', 'courses.id')
-        ->join('schedules', function ($join) {
-            $join->on('schedules.course_id', '=', 'courses.id')
-                 ->on('schedules.teacher_id', '=', 'users.id');
-        })
-        ->where('users.role', 'enseignant')
-        ->where('schedules.status', 'completed')
-        ->whereBetween('schedules.start_time', [$startDate, $endDate])
-        ->groupBy('users.id', 'users.name')
-        ->select([
-            'users.id',
-            'users.name',
-            DB::raw('SUM(schedules.completed_hours) as total_hours'),
-            DB::raw('SUM(schedules.completed_hours * course_teachers.taux_horaire) as total_earnings'),
-            DB::raw('AVG(course_teachers.taux_horaire) as avg_hourly_rate'),
-        ])
-        ->get();
+        $earnings = DB::table('users')
+            ->join('course_teachers', 'users.id', '=', 'course_teachers.teacher_id')
+            ->join('courses', 'course_teachers.course_id', '=', 'courses.id')
+            ->join('schedules', function ($join) {
+                $join->on('schedules.course_id', '=', 'courses.id')
+                     ->on('schedules.teacher_id', '=', 'users.id');
+            })
+            ->where('users.role', 'enseignant')
+            ->where('schedules.status', 'completed')
+            ->whereBetween('schedules.start_time', [$startDate, $endDate])
+            ->groupBy('users.id', 'users.name')
+            ->select([
+                'users.id',
+                'users.name',
+                DB::raw('SUM(schedules.completed_hours) as total_hours'),
+                DB::raw('SUM(schedules.completed_hours * course_teachers.taux_horaire) as total_earnings'),
+                DB::raw('AVG(course_teachers.taux_horaire) as avg_hourly_rate'),
+            ])
+            ->get();
 
-    return Inertia::render('Scolarite/Planning/Honoraire', [
-        'earnings'      => $earnings,
-        'startDate'     => $startDate->toDateString(),
-        'endDate'       => $endDate->toDateString(),
-        'totalEarnings' => $earnings->sum('total_earnings'),
-        'totalHours'    => $earnings->sum('total_hours'),
-    ]);
-}
-
-
-
-    // Envoyer planning par email
-   public function sendScheduleEmail(Request $request)
-{
-
-    
-    $request->validate([
-        'type' => 'required|in:teacher,class,all_teachers,all_classes',
-        'teacher_id' => 'required_if:type,teacher|exists:users,id',
-        'class_id' => 'required_if:type,class|exists:school_classes,id',
-        'start_date' => 'required|date',
-        'end_date' => 'required|date',
-        'include_pdf' => 'boolean',
-        'message' => 'nullable|string|max:1000',
-    ]);
-
-    
-
-    try {
-        $sent = 0;
-        
-        switch ($request->type) {
-            case 'teacher':
-                
-                $this->sendToTeacher($request->teacher_id, $request->all());
-                $sent = 1;
-                break;
-            
-            case 'class':
-                
-                $sent = $this->sendToClass($request->class_id, $request->all());
-                break;
-            
-            case 'all_teachers':
-                $sent = $this->sendToAllTeachers($request->all());
-                break;
-            
-            case 'all_classes':
-                $sent = $this->sendToAllClasses($request->all());
-                break;
-        }
-
-        return back()->with('success', "Planning envoyé avec succès à {$sent} destinataire(s).");
-    } catch (\Exception $e) {
-        \Log::error('Erreur envoi planning: ' . $e->getMessage());
-        return back()->withErrors(['error' => 'Erreur lors de l\'envoi : ' . $e->getMessage()]);
+        return Inertia::render('Scolarite/Planning/Honoraire', [
+            'earnings'      => $earnings,
+            'startDate'     => $startDate->toDateString(),
+            'endDate'       => $endDate->toDateString(),
+            'totalEarnings' => $earnings->sum('total_earnings'),
+            'totalHours'    => $earnings->sum('total_hours'),
+        ]);
     }
-}
+
+    public function sendScheduleEmail(Request $request)
+    {
+        $request->validate([
+            'type' => 'required|in:teacher,class,all_teachers,all_classes',
+            'teacher_id' => 'required_if:type,teacher|exists:users,id',
+            'class_id' => 'required_if:type,class|exists:school_classes,id',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date',
+            'include_pdf' => 'boolean',
+            'message' => 'nullable|string|max:1000',
+        ]);
+
+        try {
+            $sent = 0;
+            
+            switch ($request->type) {
+                case 'teacher':
+                    $this->sendToTeacher($request->teacher_id, $request->all());
+                    $sent = 1;
+                    break;
+                
+                case 'class':
+                    $this->sendToClass($request->class_id, $request->all());
+                    $sent = 1;
+                    break;
+                
+                case 'all_teachers':
+                    $sent = $this->sendToAllTeachers($request->all());
+                    break;
+                
+                case 'all_classes':
+                    $sent = $this->sendToAllClasses($request->all());
+                    break;
+            }
+
+            return back()->with('success', "Planning envoyé avec succès à {$sent} destinataire(s).");
+        } catch (\Exception $e) {
+            \Log::error('Erreur envoi planning: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Erreur lors de l\'envoi : ' . $e->getMessage()]);
+        }
+    }
 
     // Méthodes privées
     private function createRecurringSchedules(Schedule $originalSchedule, AcademicYear $academicYear)
@@ -492,7 +667,7 @@ public function teacherEarningsReport(Request $request)
             $newEndTime = $currentDate->copy()->addMinutes($duration);
 
             if (!Schedule::hasConflict($originalSchedule->teacher_id, $originalSchedule->classroom_id, $newStartTime, $newEndTime)) {
-                Schedule::create([
+                $recurringSchedule = Schedule::create([
                     'course_id' => $originalSchedule->course_id,
                     'teacher_id' => $originalSchedule->teacher_id,
                     'school_class_id' => $originalSchedule->school_class_id,
@@ -506,40 +681,45 @@ public function teacherEarningsReport(Request $request)
                     'is_recurring' => true,
                     'notes' => $originalSchedule->notes
                 ]);
+
+                if ($originalSchedule->isParent() && $originalSchedule->replicatedSchedules()->count() > 0) {
+                    $this->replicationService->replicateSchedule($recurringSchedule, [
+                        'replicate' => true,
+                        'use_default_classroom' => false,
+                    ]);
+                }
             }
 
             $currentDate->addWeek();
         }
     }
 
- private function sendToTeacher($teacherId, $data)
-{
-    $teacher = User::findOrFail($teacherId);
-    $schedules = Schedule::forTeacher($teacher->id)
-        ->forWeek($data['start_date'], $data['end_date'])
-        ->with(['course', 'schoolClass', 'classroom'])
-        ->orderBy('start_time')
-        ->get();
+    private function sendToTeacher($teacherId, $data)
+    {
+        $teacher = User::findOrFail($teacherId);
+        $schedules = Schedule::forTeacher($teacher->id)
+            ->forWeek($data['start_date'], $data['end_date'])
+            ->with(['course', 'schoolClass', 'classroom'])
+            ->orderBy('start_time')
+            ->get();
 
-    if ($schedules->isEmpty()) {
-        return 0;
+        if ($schedules->isEmpty()) {
+            return 0;
+        }
+
+        $pdf = null;
+        if ($data['include_pdf'] ?? true) {
+            $pdf = $this->generateTeacherPdf($teacher, $schedules, $data);
+        }
+
+        Mail::to($teacher->email)->send(
+            new \App\Mail\TeacherScheduleMail($teacher, $schedules, $data, $pdf)
+        );
+        
+        return 1;
     }
 
-    $pdf = null;
-    if ($data['include_pdf'] ?? true) {
-        $pdf = $this->generateTeacherPdf($teacher, $schedules, $data);
-    }
-
-    Mail::to($teacher->email)->send(
-        new TeacherScheduleMail($teacher, $schedules, $data, $pdf)
-    );
-    
-    return 1;
-}
-
-
-
-private function sendToClass($classId, array $data): void
+    private function sendToClass($classId, array $data): void
 {
     $class = SchoolClass::findOrFail($classId);
 

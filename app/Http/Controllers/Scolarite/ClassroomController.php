@@ -105,7 +105,7 @@ class ClassroomController extends Controller
         Classroom::create($validated);
 
         return redirect()
-            ->route('academic.classrooms.index')
+            ->route('scolarite.classrooms.index')
             ->with('success', 'Salle créée avec succès.');
     }
 
@@ -187,7 +187,7 @@ class ClassroomController extends Controller
         $classroom->update($validated);
 
         return redirect()
-            ->route('academic.classrooms.show', $classroom)
+            ->route('scolarite.classrooms.show', $classroom)
             ->with('success', 'Salle mise à jour avec succès.');
     }
 
@@ -200,14 +200,14 @@ class ClassroomController extends Controller
 
         if ($futureSchedules > 0) {
             return redirect()
-                ->route('academic.classrooms.index')
+                ->route('scolarite.classrooms.index')
                 ->with('error', 'Impossible de supprimer cette salle car elle a des créneaux programmés.');
         }
 
         $classroom->delete();
 
         return redirect()
-            ->route('academic.classrooms.index')
+            ->route('scolarite.classrooms.index')
             ->with('success', 'Salle supprimée avec succès.');
     }
 

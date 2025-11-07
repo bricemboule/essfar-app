@@ -453,7 +453,9 @@ export default function Dashboard({
                                         : "Actualiser"}
                                 </button>
                                 <Link
-                                    href={route("planning.create")}
+                                    href={route(
+                                        "scolarite.planning.schedules.create"
+                                    )}
                                     className="btn btn-success btn-sm"
                                 >
                                     <i className="fas fa-plus mr-1"></i>
@@ -669,7 +671,9 @@ export default function Dashboard({
                                     <div className="row">
                                         <div className="col-6">
                                             <Link
-                                                href={route("planning.index")}
+                                                href={route(
+                                                    "scolarite.planning.schedules.index"
+                                                )}
                                                 className="btn btn-primary btn-sm"
                                             >
                                                 <i className="fas fa-calendar mr-1"></i>
@@ -974,7 +978,7 @@ export default function Dashboard({
                                 <div className="card-footer">
                                     <Link
                                         href={route(
-                                            "academic.classrooms.index"
+                                            "scolarite.classrooms.index"
                                         )}
                                         className="btn btn-info btn-sm btn-block"
                                     >
@@ -996,7 +1000,9 @@ export default function Dashboard({
                                     <div className="row">
                                         <div className="col-6 mb-3">
                                             <Link
-                                                href={route("planning.create")}
+                                                href={route(
+                                                    "scolarite.planning.schedules.create"
+                                                )}
                                                 className="btn btn-app bg-success w-100"
                                             >
                                                 <i className="fas fa-calendar-plus"></i>
@@ -1023,7 +1029,7 @@ export default function Dashboard({
                                         </div>
                                         <div className="col-6 mb-3">
                                             <Link
-                                                href="/reports/academic"
+                                                href="/reports/scolarite"
                                                 className="btn btn-app bg-primary w-100"
                                             >
                                                 <i className="fas fa-chart-line"></i>

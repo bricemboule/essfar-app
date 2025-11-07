@@ -23,7 +23,7 @@ export default function Show({ student, stats }) {
             return;
         }
         router.post(
-            route("academic.etudiants.reset-password", student.id),
+            route("scolarite.etudiants.reset-password", student.id),
             {
                 password: newPassword,
             },
@@ -42,13 +42,13 @@ export default function Show({ student, stats }) {
                 `Êtes-vous sûr de vouloir supprimer l'étudiant ${student.name} ${student.prenom} ?`
             )
         ) {
-            router.delete(route("academic.etudiants.destroy", student.id));
+            router.delete(route("scolarite.etudiants.destroy", student.id));
         }
     };
 
     const handleStatusChange = (newStatus) => {
         if (confirm(`Voulez-vous vraiment changer le statut de l'étudiant ?`)) {
-            router.patch(route("academic.etudiants.update", student.id), {
+            router.patch(route("scolarite.etudiants.update", student.id), {
                 statut: newStatus,
             });
         }
@@ -88,7 +88,9 @@ export default function Show({ student, stats }) {
                                 </li>
                                 <li className="breadcrumb-item">
                                     <Link
-                                        href={route("academic.etudiants.index")}
+                                        href={route(
+                                            "scolarite.etudiants.index"
+                                        )}
                                     >
                                         Étudiants
                                     </Link>
@@ -180,7 +182,7 @@ export default function Show({ student, stats }) {
                                     <div className="btn-group btn-group-sm w-100 mb-2">
                                         <Link
                                             href={route(
-                                                "academic.etudiants.edit",
+                                                "scolarite.etudiants.edit",
                                                 student.id
                                             )}
                                             className="btn btn-primary"
@@ -651,7 +653,7 @@ export default function Show({ student, stats }) {
                                             <div className="mt-3">
                                                 <Link
                                                     href={route(
-                                                        "academic.etudiants.edit",
+                                                        "scolarite.etudiants.edit",
                                                         student.id
                                                     )}
                                                     className="btn btn-primary"
@@ -738,7 +740,7 @@ export default function Show({ student, stats }) {
                                                 <h5>Historique de présence</h5>
                                                 <Link
                                                     href={route(
-                                                        "academic.etudiants.attendance",
+                                                        "scolarite.attendances.index",
                                                         student.id
                                                     )}
                                                     className="btn btn-primary"
@@ -800,7 +802,7 @@ export default function Show({ student, stats }) {
                                                 <h5>Ressources pédagogiques</h5>
                                                 <Link
                                                     href={route(
-                                                        "academic.etudiants.resources",
+                                                        "scolarite.resources.index",
                                                         student.id
                                                     )}
                                                     className="btn btn-primary"

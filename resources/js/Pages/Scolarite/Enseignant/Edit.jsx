@@ -50,7 +50,7 @@ export default function Edit({ teacher, courses }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route("academic.enseignants.update", teacher.id));
+        post(route("scolarite.enseignants.update", teacher.id));
     };
 
     return (
@@ -76,7 +76,7 @@ export default function Edit({ teacher, courses }) {
                                 <li className="breadcrumb-item">
                                     <Link
                                         href={route(
-                                            "academic.enseignants.index"
+                                            "scolarite.enseignants.index"
                                         )}
                                     >
                                         Enseignants
@@ -85,7 +85,7 @@ export default function Edit({ teacher, courses }) {
                                 <li className="breadcrumb-item">
                                     <Link
                                         href={route(
-                                            "academic.enseignants.show",
+                                            "scolarite.enseignants.show",
                                             teacher.id
                                         )}
                                     >
@@ -731,7 +731,7 @@ export default function Edit({ teacher, courses }) {
                                         <div className="d-flex justify-content-between">
                                             <Link
                                                 href={route(
-                                                    "academic.enseignants.show",
+                                                    "scolarite.enseignants.show",
                                                     teacher.id
                                                 )}
                                                 className="btn btn-secondary"

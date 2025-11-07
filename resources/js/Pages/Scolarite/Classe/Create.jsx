@@ -41,7 +41,7 @@ export default function Create({ academicYears, courses, levels }) {
     const submit = (e) => {
         e.preventDefault();
 
-        post(route("academic.classes.store"));
+        post(route("scolarite.classes.store"));
     };
 
     const formatCurrency = (amount) => {
@@ -73,7 +73,7 @@ export default function Create({ academicYears, courses, levels }) {
                                 </li>
                                 <li className="breadcrumb-item">
                                     <Link
-                                        href={route("academic.classes.index")}
+                                        href={route("scolarite.classes.index")}
                                     >
                                         Classes
                                     </Link>
@@ -295,7 +295,7 @@ export default function Create({ academicYears, courses, levels }) {
                             {/* Boutons d'action */}
                             <div className="d-flex justify-content-between mt-4">
                                 <Link
-                                    href={route("academic.classes.index")}
+                                    href={route("scolarite.classes.index")}
                                     className="btn btn-secondary"
                                 >
                                     <i className="fas fa-arrow-left mr-1"></i>

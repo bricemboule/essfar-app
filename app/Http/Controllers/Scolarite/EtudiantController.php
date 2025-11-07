@@ -154,18 +154,24 @@ class EtudiantController extends Controller
                 ]);
             }
 
+            $matricule = $this->generateMatricule($request->date_naissance);
+
             // Upload de la photo
             $photoPath = null;
             if ($request->hasFile('photo')) {
                 $photoPath = $request->file('photo')->store('students/photos', 'public');
+            } else {
+                // Utiliser l'avatar par défaut
+                $photoPath = $this->getDefaultAvatar($request->sexe);
             }
             
             // Créer l'étudiant
-            $student = User::create([
+           $student = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make('password'),
                 'role' => 'etudiant',
+                'matricule' => $matricule, // Ajout du matricule
                 'telephone' => $request->telephone,
                 'adresse' => $request->adresse,
                 'date_naissance' => $request->date_naissance,
@@ -197,7 +203,7 @@ class EtudiantController extends Controller
             // Envoyer email de bienvenue (optionnel)
             // $this->sendWelcomeEmail($student, 'password');
 
-            return redirect()->route('academic.etudiants.index')
+            return redirect()->route('scolarite.etudiants.index')
                 ->with('success', 'Étudiant inscrit avec succès !');
 
         } catch (\Exception $e) {
@@ -387,7 +393,7 @@ class EtudiantController extends Controller
 
             DB::commit();
 
-            return redirect()->route('academic.etudiants.show', $student)
+            return redirect()->route('scolarite.etudiants.show', $student)
                 ->with('success', 'Informations mises à jour avec succès !');
 
         } catch (\Exception $e) {
@@ -424,7 +430,7 @@ class EtudiantController extends Controller
 
             DB::commit();
 
-            return redirect()->route('academic.etudiants.index')
+            return redirect()->route('scolarite.etudiants.index')
                 ->with('success', 'Étudiant supprimé avec succès.');
 
         } catch (\Exception $e) {
@@ -471,7 +477,7 @@ class EtudiantController extends Controller
             }
             
             DB::commit();
-            return redirect()->route('academic.etudiants.index')
+            return redirect()->route('scolarite.etudiants.index')
                 ->with('success', "{$successCount} étudiant(s) importé(s) avec succès !");
                 
         } catch (\Exception $e) {
@@ -657,7 +663,7 @@ class EtudiantController extends Controller
 
             DB::commit();
 
-            return redirect()->route('academic.etudiants.index')
+            return redirect()->route('scolarite.etudiants.index')
                 ->with('success', $message);
 
         } catch (\Exception $e) {
@@ -685,4 +691,46 @@ class EtudiantController extends Controller
 
         return back()->with('success', 'Mot de passe réinitialisé avec succès.');
     }
+
+    private function generateMatricule($dateNaissance)
+{
+    $birthDate = Carbon::parse($dateNaissance);
+    $currentYear = date('y');
+    
+
+    $day = $birthDate->format('d');
+    $month = $birthDate->format('m');
+    $birthYear = $birthDate->format('y'); 
+    
+    
+    $prefix = $day . $month . $birthYear . $currentYear;
+    
+  
+    $lastStudent = User::where('role', 'etudiant')
+        ->where('matricule', 'like', "%{$currentYear}%")
+        ->whereYear('created_at', date('Y'))
+        ->orderBy('matricule', 'desc')
+        ->first();
+    
+    $nextNumber = 1;
+    if ($lastStudent && $lastStudent->matricule) {
+        
+        $lastNumber = substr($lastStudent->matricule, -4);
+        $nextNumber = intval($lastNumber) + 1;
+    }
+    
+ 
+    $formattedNumber = str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+    
+    return $prefix . $formattedNumber;
+}
+
+private function getDefaultAvatar($sexe)
+{
+    
+    $style = $sexe === 'M' ? 'avataaars' : 'avataaars'; 
+    $seed = uniqid(); 
+    
+    return "https://api.dicebear.com/7.x/{$style}/svg?seed={$seed}";
+}
 }

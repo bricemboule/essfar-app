@@ -48,7 +48,7 @@ export default function PlanningClasse({
         endWeek.setDate(newDate.getDate() + 6);
         const newEnd = endWeek.toISOString().split("T")[0];
 
-        router.get(route("planning.class", schoolClass.id), {
+        router.get(route("scolarite.planning.class", schoolClass.id), {
             start_date: newStart,
             end_date: newEnd,
         });
@@ -60,7 +60,7 @@ export default function PlanningClasse({
                 "Envoyer le planning par email à tous les étudiants de la classe ?"
             )
         ) {
-            router.post(route("planning.send-email"), {
+            router.post(route("scolarite.planning.send-email"), {
                 type: "class",
                 id: schoolClass.id,
                 start_date: startDate,
@@ -71,7 +71,7 @@ export default function PlanningClasse({
 
     const exportPdf = () => {
         window.open(
-            route("planning.class.export-pdf", {
+            route("scolarite.planning.class.export-pdf", {
                 class: schoolClass.id,
                 start_date: startDate,
                 end_date: endDate,
@@ -251,7 +251,11 @@ export default function PlanningClasse({
                                     </Link>
                                 </li>
                                 <li className="breadcrumb-item">
-                                    <Link href={route("planning.index")}>
+                                    <Link
+                                        href={route(
+                                            "scolarite.planning.schedules.index"
+                                        )}
+                                    >
                                         Plannings
                                     </Link>
                                 </li>
@@ -406,7 +410,9 @@ export default function PlanningClasse({
                                         className="btn btn-info"
                                         onClick={() => {
                                             router.post(
-                                                route("planning.send-email"),
+                                                route(
+                                                    "scolarite.planning.send-email"
+                                                ),
                                                 {
                                                     type: "class",
                                                     class_id: schoolClass.id,
@@ -437,7 +443,9 @@ export default function PlanningClasse({
                                         Imprimer
                                     </button>
                                     <Link
-                                        href={route("planning.index")}
+                                        href={route(
+                                            "scolarite.planning.schedules.index"
+                                        )}
                                         className="btn btn-secondary"
                                     >
                                         <i className="fas fa-arrow-left mr-1"></i>

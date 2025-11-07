@@ -101,7 +101,7 @@ class EnseignantController extends Controller
             'notes_admin' => 'nullable|string|max:1000',
             
             // Cours assignés
-            'courses' => 'nullable|array|min:1',
+            'courses' => 'nullable|array',
             'courses.*' => 'exists:courses,id',
             
             // Informations de contrat
@@ -147,21 +147,21 @@ class EnseignantController extends Controller
             // Générer le matricule
             $teacher->generateMatricule();
 
-            // Assigner les cours à l'enseignant
-           // Assigner les cours à l'enseignant uniquement si des cours sont fournis
-                if (!empty($validatedData['courses'])) {
-                    $courses = Course::whereIn('id', $validatedData['courses'])->get();
+        
+            if (!empty($validatedData['courses'])) {
+                $courses = Course::whereIn('id', $validatedData['courses'])->get();
 
-                    $pivotData = [];
-                    foreach ($courses as $course) {
-                        $pivotData[$course->id] = [
-                            'academic_year_id' => $validatedData['academic_year_id'] ?? null,
-                            'assigned_at' => now(),
-                        ];
-                    }
-
-                    $teacher->teacherCourses()->attach($pivotData);
+                $pivotData = [];
+                foreach ($courses as $course) {
+                    $pivotData[$course->id] = [
+                        'academic_year_id' => $validatedData['academic_year_id'] ?? null,
+                        'taux_horaire' => $course->pivot->taux_horaire ?? 0, // Utiliser le taux du cours
+                        'assigned_at' => now(),
+                    ];
                 }
+
+            $teacher->teacherCourses()->attach($pivotData);
+        }
 
 
             // Créer le contrat global pour tous les cours
@@ -178,7 +178,7 @@ class EnseignantController extends Controller
                 // 'contract_number' => $contract->contract_number,
             ]));*/
 
-            return redirect()->route('academic.enseignants.index')
+            return redirect()->route('scolarite.enseignants.index')
                 ->with('success', "L'enseignant {$teacher->name} {$teacher->prenom} a été créé avec succès.");
 
         } catch (\Exception $e) {
@@ -405,7 +405,7 @@ public function update(Request $request, User $teacher)
 
         DB::commit();
 
-        return redirect()->route('academic.enseignants.index')
+        return redirect()->route('scolarite.enseignants.index')
             ->with('success', "Les informations de l'enseignant {$teacher->name} ont été mises à jour avec succès.");
 
     } catch (\Exception $e) {
@@ -455,7 +455,7 @@ public function destroy(User $teacher)
 
         DB::commit();
 
-        return redirect()->route('academic.enseignants.index')
+        return redirect()->route('scolarite.enseignants.index')
             ->with('success', 'L\'enseignant a été désactivé avec succès.');
 
     } catch (\Exception $e) {

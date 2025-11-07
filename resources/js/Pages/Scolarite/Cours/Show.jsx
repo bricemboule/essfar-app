@@ -33,7 +33,7 @@ export default function Show({ course, statistics }) {
     };
 
     const handleDuplicate = () => {
-        post(route("academic.courses.duplicate", course.id));
+        post(route("scolarite.courses.duplicate", course.id));
     };
 
     return (
@@ -67,7 +67,7 @@ export default function Show({ course, statistics }) {
                                 </li>
                                 <li className="breadcrumb-item">
                                     <Link
-                                        href={route("academic.courses.index")}
+                                        href={route("scolarite.courses.index")}
                                     >
                                         Cours
                                     </Link>
@@ -154,7 +154,10 @@ export default function Show({ course, statistics }) {
                     <Card title="Actions" icon="fas fa-tools" className="mb-4">
                         <div className="btn-group">
                             <Link
-                                href={route("academic.courses.edit", course.id)}
+                                href={route(
+                                    "scolarite.courses.edit",
+                                    course.id
+                                )}
                                 className="btn btn-warning"
                             >
                                 <i className="fas fa-edit mr-1"></i>
@@ -170,18 +173,24 @@ export default function Show({ course, statistics }) {
                                 Dupliquer
                             </button>
                             <Link
-                                href={route("academic.schedules.create", {
-                                    course_id: course.id,
-                                })}
+                                href={route(
+                                    "scolarite.planning.schedules.create",
+                                    {
+                                        course_id: course.id,
+                                    }
+                                )}
                                 className="btn btn-info"
                             >
                                 <i className="fas fa-calendar-plus mr-1"></i>
                                 Créer un planning
                             </Link>
                             <Link
-                                href={route("academic.schedules.index", {
-                                    course_id: course.id,
-                                })}
+                                href={route(
+                                    "scolarite.planning.schedules.index",
+                                    {
+                                        course_id: course.id,
+                                    }
+                                )}
                                 className="btn btn-primary"
                             >
                                 <i className="fas fa-calendar mr-1"></i>
@@ -469,7 +478,7 @@ export default function Show({ course, statistics }) {
                                         <h5>Enseignants assignés</h5>
                                         <Link
                                             href={route(
-                                                "academic.courses.edit",
+                                                "scolarite.courses.edit",
                                                 course.id
                                             )}
                                             className="btn btn-primary btn-sm"
@@ -545,7 +554,7 @@ export default function Show({ course, statistics }) {
                                         <h5>Classes concernées</h5>
                                         <Link
                                             href={route(
-                                                "academic.courses.edit",
+                                                "scolarite.courses.edit",
                                                 course.id
                                             )}
                                             className="btn btn-primary btn-sm"
@@ -662,7 +671,7 @@ export default function Show({ course, statistics }) {
                                                                     <td>
                                                                         <Link
                                                                             href={route(
-                                                                                "academic.classes.show",
+                                                                                "scolarite.classes.show",
                                                                                 schoolClass.id
                                                                             )}
                                                                             className="btn btn-sm btn-outline-info"
@@ -688,7 +697,7 @@ export default function Show({ course, statistics }) {
                                         <h5>Emplois du temps</h5>
                                         <Link
                                             href={route(
-                                                "academic.schedules.create",
+                                                "scolarite.planning.schedules.create",
                                                 { course_id: course.id }
                                             )}
                                             className="btn btn-success btn-sm"
@@ -789,7 +798,7 @@ export default function Show({ course, statistics }) {
                                                                 <td>
                                                                     <Link
                                                                         href={route(
-                                                                            "academic.schedules.show",
+                                                                            "scolarite.planning.schedules.show",
                                                                             schedule.id
                                                                         )}
                                                                         className="btn btn-sm btn-outline-info"

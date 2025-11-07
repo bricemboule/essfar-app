@@ -20,7 +20,7 @@ export default function Index({ teachers, filters, statistics, auth }) {
     // Fonction pour appliquer les filtres
     const handleSearch = () => {
         router.get(
-            route("academic.enseignants.index"),
+            route("scolarite.enseignants.index"),
             {
                 search: searchTerm,
                 specialite: selectedSpecialite,
@@ -39,7 +39,7 @@ export default function Index({ teachers, filters, statistics, auth }) {
         setSearchTerm("");
         setSelectedSpecialite("");
         setSelectedStatus("");
-        router.get(route("academic.enseignants.index"));
+        router.get(route("scolarite.enseignants.index"));
     };
 
     // Sélection multiple
@@ -68,7 +68,7 @@ export default function Index({ teachers, filters, statistics, auth }) {
     const confirmDelete = () => {
         if (teacherToDelete) {
             router.delete(
-                route("academic.enseignants.destroy", teacherToDelete.id),
+                route("scolarite.enseignants.destroy", teacherToDelete.id),
                 {
                     onSuccess: () => {
                         setShowDeleteModal(false);
@@ -95,7 +95,7 @@ export default function Index({ teachers, filters, statistics, auth }) {
         }
 
         router.post(
-            route("academic.enseignants.bulk-action"),
+            route("scolarite.enseignants.bulk-action"),
             {
                 action: bulkAction,
                 teacher_ids: selectedTeachers,
@@ -124,7 +124,7 @@ export default function Index({ teachers, filters, statistics, auth }) {
         }
 
         window.open(
-            `${route("academic.enseignants.export")}?${params.toString()}`
+            `${route("scolarite.enseignants.export")}?${params.toString()}`
         );
         setShowExportModal(false);
     };
@@ -264,7 +264,7 @@ export default function Index({ teachers, filters, statistics, auth }) {
                                 <div className="col-md-3">
                                     <Link
                                         href={route(
-                                            "academic.enseignants.create"
+                                            "scolarite.enseignants.create"
                                         )}
                                         className="btn btn-success btn-block btn-lg"
                                     >
@@ -275,7 +275,7 @@ export default function Index({ teachers, filters, statistics, auth }) {
                                 <div className="col-md-3">
                                     <Link
                                         href={route(
-                                            "academic.enseignants.index"
+                                            "scolarite.enseignants.index"
                                         )}
                                         className="btn btn-info btn-block btn-lg"
                                     >
@@ -286,7 +286,7 @@ export default function Index({ teachers, filters, statistics, auth }) {
                                 <div className="col-md-3">
                                     <Link
                                         href={route(
-                                            "academic.enseignants.index"
+                                            "scolarite.enseignants.index"
                                         )}
                                         className="btn btn-primary btn-block btn-lg"
                                     >
@@ -487,7 +487,7 @@ export default function Index({ teachers, filters, statistics, auth }) {
                                     <div className="mt-3">
                                         <Link
                                             href={route(
-                                                "academic.enseignants.create"
+                                                "scolarite.enseignants.create"
                                             )}
                                             className="btn btn-primary"
                                         >
@@ -686,7 +686,7 @@ export default function Index({ teachers, filters, statistics, auth }) {
                                                         <div className="btn-group btn-group-sm">
                                                             <Link
                                                                 href={route(
-                                                                    "academic.enseignants.show",
+                                                                    "scolarite.enseignants.show",
                                                                     teacher.id
                                                                 )}
                                                                 className="btn btn-info"
@@ -696,7 +696,7 @@ export default function Index({ teachers, filters, statistics, auth }) {
                                                             </Link>
                                                             <Link
                                                                 href={route(
-                                                                    "academic.enseignants.edit",
+                                                                    "scolarite.enseignants.edit",
                                                                     teacher.id
                                                                 )}
                                                                 className="btn btn-primary"

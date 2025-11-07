@@ -90,14 +90,16 @@ export default function Show({ schedule }) {
 
     const handleDelete = () => {
         if (confirm("Êtes-vous sûr de vouloir supprimer cette séance ?")) {
-            router.delete(route("planning.destroy", schedule.id));
+            router.delete(
+                route("scolarite.planning.schedules.destroy", schedule.id)
+            );
         }
     };
 
     const handleCancel = () => {
         const reason = prompt("Veuillez indiquer la raison de l'annulation :");
         if (reason) {
-            router.post(route("planning.cancel", schedule.id), {
+            router.post(route("scolarite.planning.cancel", schedule.id), {
                 reason: reason,
             });
         }
@@ -110,10 +112,13 @@ export default function Show({ schedule }) {
                 schedule.completed_hours || calculateDuration()
             );
             if (duration) {
-                router.post(route("planning.mark-completed", schedule.id), {
-                    duration_hours: parseFloat(duration),
-                    notes: "",
-                });
+                router.post(
+                    route("scolarite.planning.mark-completed", schedule.id),
+                    {
+                        duration_hours: parseFloat(duration),
+                        notes: "",
+                    }
+                );
             }
         }
     };
@@ -139,7 +144,11 @@ export default function Show({ schedule }) {
                                     </Link>
                                 </li>
                                 <li className="breadcrumb-item">
-                                    <Link href={route("planning.index")}>
+                                    <Link
+                                        href={route(
+                                            "scolarite.planning.schedules.index"
+                                        )}
+                                    >
                                         Plannings
                                     </Link>
                                 </li>
@@ -159,7 +168,9 @@ export default function Show({ schedule }) {
                         <div className="col-md-12">
                             <div className="btn-group">
                                 <Link
-                                    href={route("planning.index")}
+                                    href={route(
+                                        "scolarite.planning.schedules.index"
+                                    )}
                                     className="btn btn-secondary"
                                 >
                                     <i className="fas fa-arrow-left mr-1"></i>
@@ -169,7 +180,7 @@ export default function Show({ schedule }) {
                                     <>
                                         <Link
                                             href={route(
-                                                "planning.edit",
+                                                "scolarite.planning.schedules.edit",
                                                 schedule.id
                                             )}
                                             className="btn btn-warning"
@@ -317,7 +328,7 @@ export default function Show({ schedule }) {
                                             <p className="mb-0">
                                                 <Link
                                                     href={route(
-                                                        "planning.teacher",
+                                                        "scolarite.planning.teacher",
                                                         schedule.teacher_id
                                                     )}
                                                     className="text-primary font-weight-bold"
@@ -342,7 +353,7 @@ export default function Show({ schedule }) {
                                             <p className="mb-0">
                                                 <Link
                                                     href={route(
-                                                        "planning.class",
+                                                        "scolarite.planning.class",
                                                         schedule.school_class_id
                                                     )}
                                                     className="text-primary font-weight-bold"

@@ -60,7 +60,7 @@ return new class extends Migration
             $table->softDeletes();
             
             // Index pour optimisation
-            $table->index(['school_class_id', 'course_id', 'type']);
+            $table->index(['course_id', 'type']);
             $table->index(['academic_year_id', 'is_active']);
             $table->index('type');
             $table->index('is_public');

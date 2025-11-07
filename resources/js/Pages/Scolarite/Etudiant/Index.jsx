@@ -24,7 +24,7 @@ export default function Index({ students, classes, filters, auth }) {
 
     const handleSearch = () => {
         router.get(
-            route("academic.etudiants.index"),
+            route("scolarite.etudiants.index"),
             {
                 search: searchTerm,
                 class_id: filterClass,
@@ -78,7 +78,7 @@ export default function Index({ students, classes, filters, auth }) {
         const formData = new FormData();
         formData.append("file", importFile);
 
-        router.post(route("academic.etudiants.import"), formData, {
+        router.post(route("scolarite.etudiants.import"), formData, {
             forceFormData: true,
             preserveScroll: true,
             onSuccess: () => {
@@ -100,7 +100,7 @@ export default function Index({ students, classes, filters, auth }) {
     };
 
     const downloadTemplate = () => {
-        window.location.href = route("academic.etudiants.template");
+        window.location.href = route("scolarite.etudiants.template");
     };
 
     const clearFilters = () => {
@@ -108,7 +108,7 @@ export default function Index({ students, classes, filters, auth }) {
         setFilterSexe;
         setFilterClass("");
         setFilterStatus("");
-        router.get(route("academic.etudiants.index"));
+        router.get(route("scolarite.etudiants.index"));
     };
 
     const handleDelete = (student) => {
@@ -118,7 +118,7 @@ export default function Index({ students, classes, filters, auth }) {
 
     const confirmDelete = () => {
         if (studentToDelete) {
-            destroy(route("academic.etudiants.destroy", studentToDelete.id), {
+            destroy(route("scolarite.etudiants.destroy", studentToDelete.id), {
                 onSuccess: () => {
                     setShowDeleteModal(false);
                     setStudentToDelete(null);
@@ -161,7 +161,7 @@ export default function Index({ students, classes, filters, auth }) {
         }
 
         window.open(
-            `${route("academic.etudiants.export")}?${params.toString()}`
+            `${route("scolarite.etudiants.export")}?${params.toString()}`
         );
         setShowExportModal(false);
     };
@@ -298,7 +298,7 @@ export default function Index({ students, classes, filters, auth }) {
                         <div className="row">
                             <div className="col-md-3">
                                 <Link
-                                    href={route("academic.etudiants.create")}
+                                    href={route("scolarite.etudiants.create")}
                                     className="btn btn-success btn-block btn-lg"
                                 >
                                     <i className="fas fa-plus mr-2"></i>
@@ -350,7 +350,7 @@ export default function Index({ students, classes, filters, auth }) {
                                 <div className="btn-group">
                                     <Link
                                         href={route(
-                                            "academic.etudiants.create"
+                                            "scolarite.etudiants.create"
                                         )}
                                         className="btn btn-outline-primary"
                                     >
@@ -359,7 +359,7 @@ export default function Index({ students, classes, filters, auth }) {
                                     </Link>
                                     <Link
                                         href={route(
-                                            "academic.etudiants.create"
+                                            "scolarite.etudiants.create"
                                         )}
                                         className="btn btn-outline-success"
                                     >
@@ -368,7 +368,7 @@ export default function Index({ students, classes, filters, auth }) {
                                     </Link>
                                     <Link
                                         href={route(
-                                            "academic.etudiants.create"
+                                            "scolarite.etudiants.create"
                                         )}
                                         className="btn btn-outline-info"
                                     >
@@ -525,7 +525,7 @@ export default function Index({ students, classes, filters, auth }) {
                                 {selectedStudents.length > 0 && (
                                     <Link
                                         href={route(
-                                            "academic.etudiants.create",
+                                            "scolarite.etudiants.create",
                                             {
                                                 student_ids:
                                                     selectedStudents.join(","),
@@ -753,7 +753,7 @@ export default function Index({ students, classes, filters, auth }) {
                                                     <div className="btn-group btn-group-sm">
                                                         <Link
                                                             href={route(
-                                                                "academic.etudiants.show",
+                                                                "scolarite.etudiants.show",
                                                                 student.id
                                                             )}
                                                             className="btn btn-info"
@@ -763,7 +763,7 @@ export default function Index({ students, classes, filters, auth }) {
                                                         </Link>
                                                         <Link
                                                             href={route(
-                                                                "academic.etudiants.edit",
+                                                                "scolarite.etudiants.edit",
                                                                 student.id
                                                             )}
                                                             className="btn btn-warning"
@@ -773,7 +773,7 @@ export default function Index({ students, classes, filters, auth }) {
                                                         </Link>
                                                         <Link
                                                             href={route(
-                                                                "academic.etudiants.create",
+                                                                "scolarite.etudiants.create",
                                                                 student.id
                                                             )}
                                                             className="btn btn-primary"

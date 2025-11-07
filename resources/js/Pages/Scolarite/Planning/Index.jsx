@@ -66,7 +66,7 @@ export default function Index({
 
     const handleSearch = () => {
         router.get(
-            route("planning.index"),
+            route("scolarite.planning.schedules.index"),
             {
                 search: searchTerm,
                 teacher_id: filterTeacher,
@@ -82,7 +82,7 @@ export default function Index({
         setFilterTeacher("");
         setFilterClass("");
         setFilterStatus("");
-        router.get(route("planning.index"));
+        router.get(route("scolarite.planning.schedules.index"));
     };
 
     const handleDelete = (schedule) => {
@@ -92,12 +92,18 @@ export default function Index({
 
     const confirmDelete = () => {
         if (scheduleToDelete) {
-            destroy(route("planning.destroy", scheduleToDelete.id), {
-                onSuccess: () => {
-                    setShowDeleteModal(false);
-                    setScheduleToDelete(null);
-                },
-            });
+            destroy(
+                route(
+                    "scolarite.planning.schedules.destroy",
+                    scheduleToDelete.id
+                ),
+                {
+                    onSuccess: () => {
+                        setShowDeleteModal(false);
+                        setScheduleToDelete(null);
+                    },
+                }
+            );
         }
     };
 
@@ -109,7 +115,7 @@ export default function Index({
     const confirmCancel = () => {
         if (scheduleToCancel && cancelReason) {
             router.post(
-                route("planning.cancel", scheduleToCancel.id),
+                route("scolarite.planning.cancel", scheduleToCancel.id),
                 { reason: cancelReason },
                 {
                     onSuccess: () => {
@@ -145,7 +151,10 @@ export default function Index({
             console.log(scheduleToComplete);
             console.log(completedData.duration_hours);
             router.post(
-                route("planning.mark-completed", scheduleToComplete.id),
+                route(
+                    "scolarite.planning.mark-completed",
+                    scheduleToComplete.id
+                ),
                 {
                     duration_hours:
                         parseFloat(
@@ -332,7 +341,9 @@ export default function Index({
                         <div className="row">
                             <div className="col-md-3">
                                 <Link
-                                    href={route("planning.create")}
+                                    href={route(
+                                        "scolarite.planning.schedules.create"
+                                    )}
                                     className="btn btn-success btn-block btn-lg"
                                 >
                                     <i className="fas fa-plus mr-2"></i>
@@ -341,7 +352,9 @@ export default function Index({
                             </div>
                             <div className="col-md-3">
                                 <Link
-                                    href={route("planning.hours-report")}
+                                    href={route(
+                                        "scolarite.planning.hours-report"
+                                    )}
                                     className="btn btn-primary btn-block btn-lg"
                                 >
                                     <i className="fas fa-chart-bar mr-2"></i>
@@ -350,7 +363,7 @@ export default function Index({
                             </div>
                             <div className="col-md-3">
                                 <Link
-                                    href={route("planning.honoraire")}
+                                    href={route("scolarite.planning.honoraire")}
                                     className="btn btn-info btn-block btn-lg"
                                 >
                                     <i className="fas fa-money-bill-wave mr-2"></i>
@@ -555,7 +568,7 @@ export default function Index({
                                                         <td>
                                                             <Link
                                                                 href={route(
-                                                                    "planning.teacher",
+                                                                    "scolarite.planning.teacher",
                                                                     schedule.teacher_id
                                                                 )}
                                                                 className="text-primary teacher-link"
@@ -571,7 +584,7 @@ export default function Index({
                                                         <td>
                                                             <Link
                                                                 href={route(
-                                                                    "planning.class",
+                                                                    "scolarite.planning.class",
                                                                     schedule.school_class_id
                                                                 )}
                                                                 className="text-primary class-link"
@@ -619,7 +632,7 @@ export default function Index({
                                                             <div className="btn-group btn-group-sm">
                                                                 <a
                                                                     href={route(
-                                                                        "planning.show",
+                                                                        "scolarite.planning.schedules.show",
                                                                         schedule.id
                                                                     )}
                                                                     className="btn btn-info"
@@ -632,7 +645,7 @@ export default function Index({
                                                                     <>
                                                                         <a
                                                                             href={route(
-                                                                                "planning.edit",
+                                                                                "scolarite.planning.schedules.edit",
                                                                                 schedule.id
                                                                             )}
                                                                             className="btn btn-warning"

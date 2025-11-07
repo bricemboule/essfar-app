@@ -1,10 +1,8 @@
 <?php
-// app/Http/Controllers/CourseController.php
 
 namespace App\Http\Controllers\Scolarite;
 
 use App\Http\Controllers\Controller;
-
 use App\Models\Course;
 use App\Models\AcademicYear;
 use App\Models\SchoolClass;
@@ -57,53 +55,69 @@ class CourseController extends Controller
         ]);
     }
 
-public function store(Request $request)
-{
-    $validated = $request->validate([
-        'name' => 'required|string|max:255',
-        'code' => 'required|string|max:50|unique:courses',
-        'description' => 'nullable|string|max:2000',
-        'credits' => 'required|integer|min:1|max:10',
-        'total_hours' => 'required|integer|min:1|max:200',
-        'taux_horaire' => 'required|numeric|min:0',
-        'academic_year_id' => 'required|exists:academic_years,id',
-        'teacher_ids' => 'required|array|min:1',
-        'teacher_ids.*' => 'exists:users,id',
-        'class_ids' => 'required|array|min:1',
-        'class_ids.*' => 'exists:school_classes,id',
-    ]);
-
- 
-    $course = Course::create([
-        'name' => $validated['name'],
-        'code' => $validated['code'],
-        'description' => $validated['description'] ?? null,
-        'credits' => $validated['credits'],
-        'total_hours' => $validated['total_hours'],
-        'academic_year_id' => $validated['academic_year_id'],
-    ]);
-
-
-    foreach ($validated['teacher_ids'] as $teacherId) {
-        $course->teachers()->attach($teacherId, [
-            'academic_year_id' => $validated['academic_year_id'],
-            'taux_horaire' => $validated['taux_horaire'],
-            'assigned_at' => now(),
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:50|unique:courses',
+            'description' => 'nullable|string|max:2000',
+            'credits' => 'required|integer|min:1|max:10',
+            'total_hours' => 'required|integer|min:1|max:200',
+            'taux_horaire' => 'nullable|numeric|min:0',
+            'academic_year_id' => 'required|exists:academic_years,id',
+            'teacher_ids' => 'nullable|array', 
+            'teacher_ids.*' => 'exists:users,id',
+            'class_ids' => 'required|array|min:1',
+            'class_ids.*' => 'exists:school_classes,id',
+            'class_credits' => 'nullable|array', 
+            'class_credits.*' => 'nullable|integer|min:0|max:10',
+            'class_mandatory' => 'nullable|array', 
         ]);
+
+        
+        $course = Course::create([
+            'name' => $validated['name'],
+            'code' => $validated['code'],
+            'description' => $validated['description'] ?? null,
+            'credits' => $validated['credits'],
+            'total_hours' => $validated['total_hours'],
+            'academic_year_id' => $validated['academic_year_id'],
+        ]);
+
+      
+        if (!empty($validated['teacher_ids'])) {
+            foreach ($validated['teacher_ids'] as $teacherId) {
+                $course->teachers()->attach($teacherId, [
+                    'academic_year_id' => $validated['academic_year_id'],
+                    'taux_horaire' => $validated['taux_horaire'] ?? 0,
+                    'assigned_at' => now(),
+                ]);
+            }
+        }
+
+        // Assigner les classes avec crédits spécifiques
+        foreach ($validated['class_ids'] as $index => $classId) {
+            $pivotData = [
+                'academic_year_id' => $validated['academic_year_id'],
+                'teacher_id' => $validated['teacher_ids'][0] ?? null,
+            ];
+
+            // Ajouter les crédits spécifiques si fournis
+            if (isset($validated['class_credits'][$classId])) {
+                $pivotData['credits'] = $validated['class_credits'][$classId];
+            }
+
+            // Ajouter le statut obligatoire
+            $pivotData['is_mandatory'] = isset($validated['class_mandatory'][$classId]) 
+                ? (bool)$validated['class_mandatory'][$classId] 
+                : true;
+
+            $course->classes()->attach($classId, $pivotData);
+        }
+
+        return redirect()->route('scolarite.courses.index')
+            ->with('success', 'Cours créé avec succès.');
     }
-
-    foreach ($validated['class_ids'] as $classId) {
-    $course->classes()->attach($classId, [
-        'academic_year_id' => $validated['academic_year_id'],
-        'teacher_id' => $validated['teacher_ids'][0] ?? null, // si tu veux lier un enseignant
-    ]);
-}
-
-
-    return redirect()->route('academic.courses.index')
-        ->with('success', 'Cours créé avec succès.');
-}
-
 
     public function show(Course $course)
     {
@@ -131,8 +145,6 @@ public function store(Request $request)
             'progress_percentage' => $course->total_hours > 0 
                 ? round(($course->getCompletedHours() / $course->total_hours) * 100, 2)
                 : 0,
-            'total_cost' => $course->total_hours * $course->hourly_rate,
-            'completed_cost' => $course->getCompletedHours() * $course->hourly_rate,
         ];
 
         return Inertia::render('Scolarite/Cours/Show', [
@@ -148,10 +160,16 @@ public function store(Request $request)
         return Inertia::render('Scolarite/Cours/Edit', [
             'course' => $course,
             'academicYears' => AcademicYear::all(),
-            'teachers' => User::where('role', 'teacher')->get(),
+            'teachers' => User::where('role', 'enseignant')->get(),
             'classes' => SchoolClass::with('academicYear')->get(),
             'assignedTeachers' => $course->teachers->pluck('id')->toArray(),
-            'assignedClasses' => $course->classes->pluck('id')->toArray()
+            'assignedClasses' => $course->classes->map(function($class) {
+                return [
+                    'id' => $class->id,
+                    'credits' => $class->pivot->credits,
+                    'is_mandatory' => $class->pivot->is_mandatory,
+                ];
+            })->toArray(),
         ]);
     }
 
@@ -163,27 +181,47 @@ public function store(Request $request)
             'description' => 'nullable|string|max:2000',
             'credits' => 'required|integer|min:1|max:10',
             'total_hours' => 'required|integer|min:1|max:200',
-            'hourly_rate' => 'required|numeric|min:0',
+            'taux_horaire' => 'nullable|numeric|min:0',
             'academic_year_id' => 'required|exists:academic_years,id',
-            'teacher_ids' => 'required|array|min:1',
+            'teacher_ids' => 'nullable|array',
             'teacher_ids.*' => 'exists:users,id',
             'class_ids' => 'required|array|min:1',
             'class_ids.*' => 'exists:school_classes,id',
-            'objectives' => 'nullable|string|max:2000',
-            'prerequisites' => 'nullable|string|max:2000',
-            'evaluation_method' => 'nullable|string|max:2000',
-            'resources' => 'nullable|string|max:2000'
+            'class_credits' => 'nullable|array',
+            'class_credits.*' => 'nullable|integer|min:0|max:10',
+            'class_mandatory' => 'nullable|array',
         ]);
 
         $course->update($validated);
 
         // Mettre à jour les enseignants
-        $course->teachers()->sync($request->teacher_ids);
+        if (isset($validated['teacher_ids'])) {
+            $teacherData = [];
+            foreach ($validated['teacher_ids'] as $teacherId) {
+                $teacherData[$teacherId] = [
+                    'academic_year_id' => $validated['academic_year_id'],
+                    'taux_horaire' => $validated['taux_horaire'] ?? 0,
+                    'assigned_at' => now(),
+                ];
+            }
+            $course->teachers()->sync($teacherData);
+        }
 
         // Mettre à jour les classes
-        $course->classes()->sync($request->class_ids);
+        $classData = [];
+        foreach ($validated['class_ids'] as $classId) {
+            $classData[$classId] = [
+                'academic_year_id' => $validated['academic_year_id'],
+                'teacher_id' => $validated['teacher_ids'][0] ?? null,
+                'credits' => $validated['class_credits'][$classId] ?? null,
+                'is_mandatory' => isset($validated['class_mandatory'][$classId]) 
+                    ? (bool)$validated['class_mandatory'][$classId] 
+                    : true,
+            ];
+        }
+        $course->classes()->sync($classData);
 
-        return redirect()->route('academic.courses.index')
+        return redirect()->route('scolarite.courses.index')
             ->with('success', 'Cours mis à jour avec succès.');
     }
 
@@ -193,44 +231,40 @@ public function store(Request $request)
             return back()->withErrors(['error' => 'Impossible de supprimer un cours qui a des plannings.']);
         }
 
-        // Détacher les relations
         $course->teachers()->detach();
         $course->classes()->detach();
-
         $course->delete();
 
-        return redirect()->route('academic.courses.index')
+        return redirect()->route('scolarite.courses.index')
             ->with('success', 'Cours supprimé avec succès.');
     }
 
-public function teachers(Course $course)
-{
-    // Charger les enseignants liés au cours (avec le pivot)
-    $course->load(['teachers' => function ($query) {
-        $query->withPivot('academic_year_id', 'assigned_at');
-    }]);
+    public function teachers(Course $course)
+    {
+        $course->load(['teachers' => function ($query) {
+            $query->withPivot('academic_year_id', 'assigned_at', 'taux_horaire');
+        }]);
 
-    // Récupérer toutes les années académiques pour les correspondances
-    $academicYears = AcademicYear::pluck('name', 'id');
+        $academicYears = AcademicYear::pluck('name', 'id');
 
-    // Construire un tableau propre avec l’année académique
-    $teachers = $course->teachers->map(function ($teacher) use ($academicYears) {
-        return [
-            'id' => $teacher->id,
-            'name' => $teacher->name,
-            'email' => $teacher->email,
-            'assigned_at' => $teacher->pivot->assigned_at,
-            'academic_year' => $academicYears[$teacher->pivot->academic_year_id] ?? 'Non définie',
-        ];
-    });
+        $teachers = $course->teachers->map(function ($teacher) use ($academicYears) {
+            return [
+                'id' => $teacher->id,
+                'name' => $teacher->name,
+                'email' => $teacher->email,
+                'assigned_at' => $teacher->pivot->assigned_at,
+                'taux_horaire' => $teacher->pivot->taux_horaire,
+                'academic_year' => $academicYears[$teacher->pivot->academic_year_id] ?? 'Non définie',
+            ];
+        });
 
-    return inertia('Scolarite/Cours/Enseignant', [
-        'course' => $course,
-        'teachers' => $teachers,
-    ]);
-}
+        return inertia('Scolarite/Cours/Enseignant', [
+            'course' => $course,
+            'teachers' => $teachers,
+        ]);
+    }
 
-public function coursesByClass(SchoolClass $class)
+    public function coursesByClass(SchoolClass $class)
 {
     $activeYear = AcademicYear::active()->first();
 
@@ -246,68 +280,26 @@ public function coursesByClass(SchoolClass $class)
     return response()->json($courses);
 }
 
-public function classes(Course $course)
-{
-    $course->load('classes');
-
-    return inertia('Scolarite/Cours/Classes', [
-        'course' => $course,
-        'classes' => $course->classes,
-    ]);
-}
-
-
-    public function assignTeachers(Request $request, Course $course)
+    public function classes(Course $course)
     {
-        $request->validate([
-            'teacher_ids' => 'required|array',
-            'teacher_ids.*' => 'exists:users,id'
-        ]);
+        $course->load(['classes' => function($query) {
+            $query->withPivot('credits', 'is_mandatory');
+        }]);
 
-        $course->teachers()->sync($request->teacher_ids);
+        $classes = $course->classes->map(function($class) use ($course) {
+            return [
+                'id' => $class->id,
+                'name' => $class->name,
+                'level' => $class->level,
+                'capacity' => $class->capacity,
+                'credits' => $class->pivot->credits ?? $course->credits,
+                'is_mandatory' => $class->pivot->is_mandatory,
+            ];
+        });
 
-        return back()->with('success', 'Enseignants assignés avec succès.');
-    }
-
-    public function assignClasses(Request $request, Course $course)
-    {
-        $request->validate([
-            'class_ids' => 'required|array',
-            'class_ids.*' => 'exists:school_classes,id'
-        ]);
-
-        $course->classes()->sync($request->class_ids);
-
-        return back()->with('success', 'Classes assignées avec succès.');
-    }
-
-    public function duplicate(Course $course)
-    {
-        $newCourse = $course->replicate();
-        $newCourse->code = $course->code . '-COPY';
-        $newCourse->name = $course->name . ' (Copie)';
-        $newCourse->save();
-
-        // Copier les relations
-        $newCourse->teachers()->attach($course->teachers->pluck('id'));
-        $newCourse->classes()->attach($course->classes->pluck('id'));
-
-        return redirect()->route('academic.courses.edit', $newCourse)
-            ->with('success', 'Cours dupliqué avec succès. Modifiez les informations si nécessaire.');
-    }
-
-    public function getProgress(Course $course)
-    {
-        $completedHours = $course->getCompletedHours();
-        $progressPercentage = $course->total_hours > 0 
-            ? round(($completedHours / $course->total_hours) * 100, 2)
-            : 0;
-
-        return response()->json([
-            'completed_hours' => $completedHours,
-            'remaining_hours' => $course->getRemainingHours(),
-            'progress_percentage' => $progressPercentage,
-            'total_hours' => $course->total_hours
+        return inertia('Scolarite/Cours/Classes', [
+            'course' => $course,
+            'classes' => $classes,
         ]);
     }
 }

@@ -55,7 +55,7 @@ class SchoolClassController extends Controller
 
         SchoolClass::create($validated);
 
-        return redirect()->route('academic.classes.index')
+        return redirect()->route('scolarite.classes.index')
             ->with('success', 'Classe créée avec succès.');
     }
 
@@ -105,7 +105,7 @@ class SchoolClassController extends Controller
 
         $class->update($validated);
 
-        return redirect()->route('academic.classes.index')
+        return redirect()->route('scolarite.classes.index')
             ->with('success', 'Classe mise à jour avec succès.');
     }
 
@@ -121,7 +121,7 @@ class SchoolClassController extends Controller
 
         $class->delete();
 
-        return redirect()->route('academic.classes.index')
+        return redirect()->route('scolarite.classes.index')
             ->with('success', 'Classe supprimée avec succès.');
     }
 

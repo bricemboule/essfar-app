@@ -42,7 +42,7 @@ export default function SendScheduleEmailModal({
             data.class_id = selectedClass;
         }
 
-        router.post(route("planning.send-email"), data, {
+        router.post(route("scolarite.planning.send-email"), data, {
             onSuccess: () => {
                 setSending(false);
                 onClose();

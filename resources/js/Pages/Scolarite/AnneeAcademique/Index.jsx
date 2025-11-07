@@ -31,7 +31,7 @@ export default function Index({ academicYears, auth }) {
 
     const confirmDelete = () => {
         if (yearToDelete) {
-            destroy(route("academic.years.destroy", yearToDelete.id), {
+            destroy(route("scolarite.years.destroy", yearToDelete.id), {
                 onSuccess: () => {
                     setShowDeleteModal(false);
                     setYearToDelete(null);
@@ -134,7 +134,7 @@ export default function Index({ academicYears, auth }) {
                                 </div>
                                 <Link
                                     href={route(
-                                        "academic.years.show",
+                                        "scolarite.years.show",
                                         activeYear.id
                                     )}
                                     className="btn btn-sm btn-outline-info"
@@ -245,7 +245,7 @@ export default function Index({ academicYears, auth }) {
                                     <div className="btn-group w-100">
                                         <Link
                                             href={route(
-                                                "academic.years.create"
+                                                "scolarite.years.create"
                                             )}
                                             className="btn btn-primary"
                                         >
@@ -360,7 +360,7 @@ export default function Index({ academicYears, auth }) {
                                                             0 && (
                                                             <Link
                                                                 href={route(
-                                                                    "academic.classes.index",
+                                                                    "scolarite.classes.index",
                                                                     {
                                                                         academic_year_id:
                                                                             year.id,
@@ -383,7 +383,7 @@ export default function Index({ academicYears, auth }) {
                                                             0 && (
                                                             <Link
                                                                 href={route(
-                                                                    "academic.courses.index",
+                                                                    "scolarite.courses.index",
                                                                     {
                                                                         academic_year_id:
                                                                             year.id,
@@ -426,7 +426,7 @@ export default function Index({ academicYears, auth }) {
                                                     <div className="btn-group btn-group-sm">
                                                         <Link
                                                             href={route(
-                                                                "academic.years.show",
+                                                                "scolarite.years.show",
                                                                 year.id
                                                             )}
                                                             className="btn btn-info"
@@ -436,7 +436,7 @@ export default function Index({ academicYears, auth }) {
                                                         </Link>
                                                         <Link
                                                             href={route(
-                                                                "academic.years.edit",
+                                                                "scolarite.years.edit",
                                                                 year.id
                                                             )}
                                                             className="btn btn-warning"

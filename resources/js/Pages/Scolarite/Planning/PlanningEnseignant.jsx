@@ -50,7 +50,7 @@ export default function PlanningEnseignant({
         endWeek.setDate(newDate.getDate() + 6);
         const newEnd = endWeek.toISOString().split("T")[0];
 
-        router.get(route("planning.teacher", teacher.id), {
+        router.get(route("scolarite.planning.teacher", teacher.id), {
             start_date: newStart,
             end_date: newEnd,
         });
@@ -58,7 +58,7 @@ export default function PlanningEnseignant({
 
     const sendScheduleEmail = () => {
         if (confirm("Envoyer le planning par email à l'enseignant ?")) {
-            router.post(route("planning.send-email"), {
+            router.post(route("scolarite.planning.send-email"), {
                 type: "teacher",
                 id: teacher.id,
                 start_date: startDate,
@@ -473,7 +473,11 @@ export default function PlanningEnseignant({
                                     </Link>
                                 </li>
                                 <li className="breadcrumb-item">
-                                    <Link href={route("planning.index")}>
+                                    <Link
+                                        href={route(
+                                            "scolarite.planning.schedules.index"
+                                        )}
+                                    >
                                         Plannings
                                     </Link>
                                 </li>
@@ -625,7 +629,9 @@ export default function PlanningEnseignant({
                                         Imprimer
                                     </button>
                                     <Link
-                                        href={route("planning.index")}
+                                        href={route(
+                                            "scolarite.planning.schedules.index"
+                                        )}
                                         className="btn btn-secondary"
                                     >
                                         <i className="fas fa-arrow-left mr-1"></i>
@@ -811,7 +817,7 @@ export default function PlanningEnseignant({
                                                                                         <div className="btn-group-vertical btn-group-sm">
                                                                                             <Link
                                                                                                 href={route(
-                                                                                                    "planning.show",
+                                                                                                    "scolarite.planning.schedules.show",
                                                                                                     schedule.id
                                                                                                 )}
                                                                                                 className="btn btn-info"
@@ -822,7 +828,7 @@ export default function PlanningEnseignant({
                                                                                             {schedule.can_be_modified && (
                                                                                                 <Link
                                                                                                     href={route(
-                                                                                                        "planning.edit",
+                                                                                                        "scolarite.planning.schedules.edit",
                                                                                                         schedule.id
                                                                                                     )}
                                                                                                     className="btn btn-warning"

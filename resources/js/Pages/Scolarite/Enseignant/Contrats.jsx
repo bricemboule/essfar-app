@@ -10,7 +10,7 @@ export default function Contracts({ contracts, filters, statistics }) {
 
     const applyFilters = () => {
         router.get(
-            route("academic.contracts.index"),
+            route("scolarite.contracts.index"),
             {
                 search: searchTerm,
                 status: selectedStatus,
@@ -28,7 +28,7 @@ export default function Contracts({ contracts, filters, statistics }) {
         setSelectedStatus("");
         setSelectedType("");
         router.get(
-            route("academic.contracts.index"),
+            route("scolarite.contracts.index"),
             {},
             { preserveState: true }
         );
@@ -55,12 +55,12 @@ export default function Contracts({ contracts, filters, statistics }) {
     };
 
     const handleRenewContract = (contractId) => {
-        router.get(route("academic.contracts.renew-form", contractId));
+        router.get(route("scolarite.contracts.renew-form", contractId));
     };
 
     const handleTerminateContract = (contractId) => {
         if (confirm("Êtes-vous sûr de vouloir résilier ce contrat ?")) {
-            router.post(route("academic.contracts.terminate", contractId));
+            router.post(route("scolarite.contracts.terminate", contractId));
         }
     };
 
@@ -87,7 +87,7 @@ export default function Contracts({ contracts, filters, statistics }) {
                                 <li className="breadcrumb-item">
                                     <Link
                                         href={route(
-                                            "academic.enseignants.index"
+                                            "scolarite.enseignants.index"
                                         )}
                                     >
                                         Enseignants
@@ -173,7 +173,7 @@ export default function Contracts({ contracts, filters, statistics }) {
                                         <div className="btn-group">
                                             <Link
                                                 href={route(
-                                                    "academic.enseignants.index"
+                                                    "scolarite.enseignants.index"
                                                 )}
                                                 className="btn btn-secondary"
                                             >
@@ -186,7 +186,7 @@ export default function Contracts({ contracts, filters, statistics }) {
                                                 onClick={() =>
                                                     (window.location.href =
                                                         route(
-                                                            "academic.contracts.export"
+                                                            "scolarite.contracts.export"
                                                         ))
                                                 }
                                             >
@@ -369,7 +369,7 @@ export default function Contracts({ contracts, filters, statistics }) {
                                                                     <div>
                                                                         <Link
                                                                             href={route(
-                                                                                "academic.enseignants.show",
+                                                                                "scolarite.enseignants.show",
                                                                                 contract
                                                                                     .teacher
                                                                                     .id
@@ -506,7 +506,7 @@ export default function Contracts({ contracts, filters, statistics }) {
                                                                     <div className="btn-group btn-group-sm">
                                                                         <a
                                                                             href={route(
-                                                                                "academic.contracts.download",
+                                                                                "scolarite.contracts.download",
                                                                                 contract.id
                                                                             )}
                                                                             className="btn btn-success"

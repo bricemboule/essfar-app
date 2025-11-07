@@ -16,7 +16,7 @@ export default function Index({ courses, academicYears, filters, auth }) {
 
     const handleSearch = () => {
         router.get(
-            route("academic.courses.index"),
+            route("scolarite.courses.index"),
             {
                 search: searchTerm,
                 academic_year_id: filterYear,
@@ -33,7 +33,7 @@ export default function Index({ courses, academicYears, filters, auth }) {
         setSearchTerm("");
         setFilterYear("");
         setFilterCredits("");
-        router.get(route("academic.courses.index"));
+        router.get(route("scolarite.courses.index"));
     };
 
     const handleDelete = (course) => {
@@ -43,7 +43,7 @@ export default function Index({ courses, academicYears, filters, auth }) {
 
     const confirmDelete = () => {
         if (courseToDelete) {
-            destroy(route("academic.courses.destroy", courseToDelete.id), {
+            destroy(route("scolarite.courses.destroy", courseToDelete.id), {
                 onSuccess: () => {
                     setShowDeleteModal(false);
                     setCourseToDelete(null);
@@ -53,7 +53,7 @@ export default function Index({ courses, academicYears, filters, auth }) {
     };
 
     const handleDuplicate = (course) => {
-        router.post(route("academic.courses.duplicate", course.id));
+        router.post(route("scolarite.courses.duplicate", course.id));
     };
 
     const formatCurrency = (amount) => {
@@ -295,7 +295,7 @@ export default function Index({ courses, academicYears, filters, auth }) {
                                         </button>
                                         <Link
                                             href={route(
-                                                "academic.courses.create"
+                                                "scolarite.courses.create"
                                             )}
                                             className="btn btn-success"
                                         >
@@ -417,7 +417,7 @@ export default function Index({ courses, academicYears, filters, auth }) {
                                                                 0 && (
                                                                 <Link
                                                                     href={route(
-                                                                        "academic.courses.teachers",
+                                                                        "scolarite.courses.teachers",
                                                                         course.id
                                                                     )}
                                                                     className="btn btn-sm btn-outline-primary"
@@ -439,7 +439,7 @@ export default function Index({ courses, academicYears, filters, auth }) {
                                                                 0 && (
                                                                 <Link
                                                                     href={route(
-                                                                        "academic.courses.classes",
+                                                                        "scolarite.courses.classes",
                                                                         course.id
                                                                     )}
                                                                     className="btn btn-sm btn-outline-secondary"
@@ -477,7 +477,7 @@ export default function Index({ courses, academicYears, filters, auth }) {
                                                         <div className="btn-group btn-group-sm">
                                                             <Link
                                                                 href={route(
-                                                                    "academic.courses.show",
+                                                                    "scolarite.courses.show",
                                                                     course.id
                                                                 )}
                                                                 className="btn btn-info"
@@ -487,7 +487,7 @@ export default function Index({ courses, academicYears, filters, auth }) {
                                                             </Link>
                                                             <Link
                                                                 href={route(
-                                                                    "academic.courses.edit",
+                                                                    "scolarite.courses.edit",
                                                                     course.id
                                                                 )}
                                                                 className="btn btn-warning"

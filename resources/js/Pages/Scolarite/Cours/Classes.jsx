@@ -15,7 +15,7 @@ export default function Classes({ course, classes }) {
                             Classes du cours : {course.name}
                         </h1>
                         <Link
-                            href={route("academic.courses.index")}
+                            href={route("scolarite.courses.index")}
                             className="btn btn-secondary"
                         >
                             <i className="fas fa-arrow-left mr-1"></i>

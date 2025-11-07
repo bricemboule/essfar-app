@@ -42,7 +42,7 @@ export default function Create({ buildings, equipmentOptions }) {
 
     const submit = (e) => {
         e.preventDefault();
-        post(route("academic.classrooms.store"));
+        post(route("scolarite.classrooms.store"));
     };
 
     const getCapacityCategory = (capacity) => {
@@ -80,7 +80,7 @@ export default function Create({ buildings, equipmentOptions }) {
                                 <li className="breadcrumb-item">
                                     <Link
                                         href={route(
-                                            "academic.classrooms.index"
+                                            "scolarite.classrooms.index"
                                         )}
                                     >
                                         Salles
@@ -303,7 +303,7 @@ export default function Create({ buildings, equipmentOptions }) {
                             {/* Boutons d'action */}
                             <div className="d-flex justify-content-between mt-4">
                                 <Link
-                                    href={route("academic.classrooms.index")}
+                                    href={route("scolarite.classrooms.index")}
                                     className="btn btn-secondary"
                                 >
                                     <i className="fas fa-arrow-left mr-1"></i>

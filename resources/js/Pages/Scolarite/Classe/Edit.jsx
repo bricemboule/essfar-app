@@ -56,7 +56,7 @@ export default function Edit({ class: schoolClass, academicYears, levels }) {
     const submit = (e) => {
         e.preventDefault();
 
-        put(route("academic.classes.update", schoolClass.id));
+        put(route("scolarite.classes.update", schoolClass.id));
     };
 
     const handleReset = () => {
@@ -102,7 +102,7 @@ export default function Edit({ class: schoolClass, academicYears, levels }) {
                                 </li>
                                 <li className="breadcrumb-item">
                                     <Link
-                                        href={route("academic.classes.index")}
+                                        href={route("scolarite.classes.index")}
                                     >
                                         Classes
                                     </Link>
@@ -110,7 +110,7 @@ export default function Edit({ class: schoolClass, academicYears, levels }) {
                                 <li className="breadcrumb-item">
                                     <Link
                                         href={route(
-                                            "academic.classes.show",
+                                            "scolarite.classes.show",
                                             schoolClass.id
                                         )}
                                     >
@@ -370,7 +370,7 @@ export default function Edit({ class: schoolClass, academicYears, levels }) {
                             <div className="d-flex justify-content-between mt-4">
                                 <Link
                                     href={route(
-                                        "academic.classes.show",
+                                        "scolarite.classes.show",
                                         schoolClass.id
                                     )}
                                     className="btn btn-secondary"
@@ -571,7 +571,7 @@ export default function Edit({ class: schoolClass, academicYears, levels }) {
                                 <div className="d-grid gap-2">
                                     <Link
                                         href={route(
-                                            "academic.classes.show",
+                                            "scolarite.classes.show",
                                             schoolClass.id
                                         )}
                                         className="btn btn-outline-info btn-sm"

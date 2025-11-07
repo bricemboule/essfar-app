@@ -19,6 +19,7 @@ class ScolariteDashboardController extends Controller
     public function index()
     {
         $academicYear = AcademicYear::active()->first();
+        
         $today = Carbon::today();
         $startOfWeek = Carbon::now()->startOfWeek();
         $endOfWeek = Carbon::now()->endOfWeek();

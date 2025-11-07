@@ -1,5 +1,4 @@
 <?php
-// app/Http/Controllers/AcademicYearController.php
 
 namespace App\Http\Controllers\Scolarite;
 
@@ -45,7 +44,7 @@ class AcademicYearController extends Controller
 
         AcademicYear::create($validated);
 
-        return redirect()->route('academic.years.index')
+        return redirect()->route('scolarite.years.index')
             ->with('success', 'Année académique créée avec succès.');
     }
 
@@ -89,7 +88,7 @@ class AcademicYearController extends Controller
 
         $year->update($validated);
 
-        return redirect()->route('academic.years.index')
+        return redirect()->route('scolarite.years.index')
             ->with('success', 'Année académique mise à jour avec succès.');
     }
 
@@ -105,7 +104,7 @@ class AcademicYearController extends Controller
 
         $year->delete();
 
-        return redirect()->route('academic.years.index')
+        return redirect()->route('scolarite.years.index')
             ->with('success', 'Année académique supprimée avec succès.');
     }
 }

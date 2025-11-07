@@ -1,5 +1,4 @@
 <?php
-// app/Models/Schedule.php
 
 namespace App\Models;
 
@@ -86,6 +85,16 @@ class Schedule extends Model
     {
         return $query->where('start_time', '>', now())
                     ->where('status', 'scheduled');
+    }
+
+      public function parentSchedule()
+    {
+        return $this->belongsTo(Schedule::class, 'parent_schedule_id');
+    }
+
+    public function replicatedSchedules()
+    {
+        return $this->hasMany(Schedule::class, 'parent_schedule_id');
     }
 
     // Méthodes utilitaires

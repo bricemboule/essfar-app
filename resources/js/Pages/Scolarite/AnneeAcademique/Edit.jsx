@@ -94,7 +94,7 @@ export default function Edit({ academicYear }) {
             }
         }
 
-        put(route("academic.years.update", academicYear.id));
+        put(route("scolarite.years.update", academicYear.id));
     };
 
     const handleReset = () => {
@@ -186,14 +186,14 @@ export default function Edit({ academicYear }) {
                                     </Link>
                                 </li>
                                 <li className="breadcrumb-item">
-                                    <Link href={route("academic.years.index")}>
+                                    <Link href={route("scolarite.years.index")}>
                                         Années académiques
                                     </Link>
                                 </li>
                                 <li className="breadcrumb-item">
                                     <Link
                                         href={route(
-                                            "academic.years.show",
+                                            "scolarite.years.show",
                                             academicYear.id
                                         )}
                                     >
@@ -445,7 +445,7 @@ export default function Edit({ academicYear }) {
                                                         <span className="progress-description">
                                                             <Link
                                                                 href={route(
-                                                                    "academic.classes.index",
+                                                                    "scolarite.classes.index",
                                                                     {
                                                                         academic_year_id:
                                                                             academicYear.id,
@@ -487,7 +487,7 @@ export default function Edit({ academicYear }) {
                                                         <span className="progress-description">
                                                             <Link
                                                                 href={route(
-                                                                    "academic.courses.index",
+                                                                    "scolarite.courses.index",
                                                                     {
                                                                         academic_year_id:
                                                                             academicYear.id,
@@ -529,7 +529,7 @@ export default function Edit({ academicYear }) {
                                                         <span className="progress-description">
                                                             <Link
                                                                 href={route(
-                                                                    "academic.schedules.index",
+                                                                    "scolarite.planning.schedules.index",
                                                                     {
                                                                         academic_year_id:
                                                                             academicYear.id,
@@ -562,7 +562,7 @@ export default function Edit({ academicYear }) {
                             <div className="d-flex justify-content-between mt-4">
                                 <Link
                                     href={route(
-                                        "academic.years.show",
+                                        "scolarite.years.show",
                                         academicYear.id
                                     )}
                                     className="btn btn-secondary"
@@ -738,7 +738,7 @@ export default function Edit({ academicYear }) {
                                 <div className="d-grid gap-2">
                                     <Link
                                         href={route(
-                                            "academic.years.show",
+                                            "scolarite.years.show",
                                             academicYear.id
                                         )}
                                         className="btn btn-outline-info btn-sm"
@@ -750,7 +750,7 @@ export default function Edit({ academicYear }) {
                                     {academicYear.classes_count > 0 && (
                                         <Link
                                             href={route(
-                                                "academic.classes.index",
+                                                "scolarite.classes.index",
                                                 {
                                                     academic_year_id:
                                                         academicYear.id,
@@ -766,7 +766,7 @@ export default function Edit({ academicYear }) {
                                     {academicYear.courses_count > 0 && (
                                         <Link
                                             href={route(
-                                                "academic.courses.index",
+                                                "scolarite.courses.index",
                                                 {
                                                     academic_year_id:
                                                         academicYear.id,

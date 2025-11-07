@@ -45,7 +45,7 @@ export default function Edit({ student, academicYears, classes }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route("academic.etudiants.update", student.id));
+        post(route("scolarite.etudiants.update", student.id));
     };
 
     const maxBirthDate = new Date();
@@ -73,7 +73,9 @@ export default function Edit({ student, academicYears, classes }) {
                                 </li>
                                 <li className="breadcrumb-item">
                                     <Link
-                                        href={route("academic.etudiants.index")}
+                                        href={route(
+                                            "scolarite.etudiants.index"
+                                        )}
                                     >
                                         Étudiants
                                     </Link>
@@ -81,7 +83,7 @@ export default function Edit({ student, academicYears, classes }) {
                                 <li className="breadcrumb-item">
                                     <Link
                                         href={route(
-                                            "academic.etudiants.show",
+                                            "scolarite.etudiants.show",
                                             student.id
                                         )}
                                     >
@@ -826,7 +828,7 @@ export default function Edit({ student, academicYears, classes }) {
                                         <div className="d-flex justify-content-between">
                                             <Link
                                                 href={route(
-                                                    "academic.etudiants.show",
+                                                    "scolarite.etudiants.show",
                                                     student.id
                                                 )}
                                                 className="btn btn-secondary"

@@ -23,13 +23,13 @@ export default function Statistics({
                         <div className="col-sm-6">
                             <ol className="breadcrumb float-sm-right">
                                 <li className="breadcrumb-item">
-                                    <Link href={route("student.dashboard")}>
+                                    <Link href={route("etudiant.dashboard")}>
                                         Dashboard
                                     </Link>
                                 </li>
                                 <li className="breadcrumb-item">
                                     <Link
-                                        href={route("student.resources.index")}
+                                        href={route("etudiant.resources.index")}
                                     >
                                         Ressources
                                     </Link>
@@ -222,7 +222,7 @@ export default function Statistics({
                                                         <div>
                                                             <Link
                                                                 href={route(
-                                                                    "student.resources.show",
+                                                                    "etudiant.resources.show",
                                                                     item
                                                                         .resource
                                                                         .id
@@ -285,7 +285,7 @@ export default function Statistics({
                                                         <div>
                                                             <Link
                                                                 href={route(
-                                                                    "student.resources.show",
+                                                                    "etudiant.resources.show",
                                                                     item
                                                                         .resource
                                                                         .id
@@ -329,7 +329,7 @@ export default function Statistics({
                     <div className="row">
                         <div className="col-12">
                             <Link
-                                href={route("student.resources.index")}
+                                href={route("etudiant.resources.index")}
                                 className="btn btn-secondary"
                             >
                                 <i className="fas fa-arrow-left mr-1"></i>

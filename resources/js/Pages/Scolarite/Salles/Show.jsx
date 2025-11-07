@@ -76,7 +76,7 @@ export default function Show({ classroom, occupancyRate, upcomingSchedules }) {
                                 <li className="breadcrumb-item">
                                     <Link
                                         href={route(
-                                            "academic.classrooms.index"
+                                            "scolarite.classrooms.index"
                                         )}
                                     >
                                         Salles
@@ -395,7 +395,7 @@ export default function Show({ classroom, occupancyRate, upcomingSchedules }) {
                                 <div className="d-grid gap-2">
                                     <Link
                                         href={route(
-                                            "academic.classrooms.edit",
+                                            "scolarite.classrooms.edit",
                                             classroom.id
                                         )}
                                         className="btn btn-warning btn-block"
@@ -413,7 +413,7 @@ export default function Show({ classroom, occupancyRate, upcomingSchedules }) {
                                     </button>
                                     <Link
                                         href={route(
-                                            "academic.classrooms.index"
+                                            "scolarite.classrooms.index"
                                         )}
                                         className="btn btn-outline-secondary btn-block"
                                     >

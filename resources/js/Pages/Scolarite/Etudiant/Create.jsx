@@ -42,7 +42,7 @@ export default function Create({ academicYears, classes }) {
     const handleSubmit = (e) => {
         e.preventDefault();
         console.log("Bonjour");
-        post(route("academic.etudiants.store"));
+        post(route("scolarite.etudiants.store"));
     };
 
     const nextStep = () => {
@@ -75,7 +75,9 @@ export default function Create({ academicYears, classes }) {
                                 </li>
                                 <li className="breadcrumb-item">
                                     <Link
-                                        href={route("academic.etudiants.index")}
+                                        href={route(
+                                            "scolarite.etudiants.index"
+                                        )}
                                     >
                                         Étudiants
                                     </Link>
@@ -903,7 +905,7 @@ export default function Create({ academicYears, classes }) {
                                             <div>
                                                 <Link
                                                     href={route(
-                                                        "academic.etudiants.index"
+                                                        "scolarite.etudiants.index"
                                                     )}
                                                     className="btn btn-outline-secondary mr-2"
                                                 >

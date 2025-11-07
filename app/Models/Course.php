@@ -1,5 +1,4 @@
 <?php
-// app/Models/Course.php
 
 namespace App\Models;
 
@@ -30,17 +29,24 @@ class Course extends Model
         return $this->belongsTo(AcademicYear::class);
     }
 
+    /**
+     * Classes avec crédits spécifiques par classe
+     */
     public function classes()
     {
-        return $this->belongsToMany(SchoolClass::class, 'class_courses')
-            ->withPivot('academic_year_id', 'teacher_id');
-
+        return $this->belongsToMany(SchoolClass::class, 'class_courses', 'course_id', 'school_class_id')
+            ->withPivot('academic_year_id', 'teacher_id', 'credits', 'is_mandatory')
+            ->withTimestamps();
     }
 
+    /**
+     * Enseignants assignés au cours
+     */
     public function teachers()
     {
         return $this->belongsToMany(User::class, 'course_teachers', 'course_id', 'teacher_id')
-                                ->withPivot('taux_horaire','academic_year_id', 'assigned_at');
+            ->withPivot('taux_horaire', 'academic_year_id', 'assigned_at')
+            ->withTimestamps();
     }
 
     public function schedules()
@@ -78,5 +84,18 @@ class Course extends Model
             ->sum(\DB::raw('TIMESTAMPDIFF(MINUTE, start_time, end_time) / 60'));
             
         return $completedHours * $this->hourly_rate;
+    }
+
+    /**
+     * Obtenir les crédits pour une classe spécifique
+     */
+    public function getCreditsForClass($classId)
+    {
+        $pivot = $this->classes()->where('class_id', $classId)->first();
+        
+       
+        return $pivot && $pivot->pivot->credits !== null 
+            ? $pivot->pivot->credits 
+            : $this->credits;
     }
 }

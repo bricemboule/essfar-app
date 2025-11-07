@@ -59,7 +59,7 @@ export default function Create({ courses, academicYears }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route("academic.enseignants.store"));
+        post(route("scolarite.enseignants.store"));
     };
 
     const nextStep = () => {
@@ -93,7 +93,7 @@ export default function Create({ courses, academicYears }) {
                                 <li className="breadcrumb-item">
                                     <Link
                                         href={route(
-                                            "academic.enseignants.index"
+                                            "scolarite.enseignants.index"
                                         )}
                                     >
                                         Enseignants
@@ -488,8 +488,9 @@ export default function Create({ courses, academicYears }) {
                                                             <option value="Pro">
                                                                 Professionnel
                                                             </option>
-                                                            <option value="Phd">
-                                                                Doctorat
+                                                            <option value="CC">
+                                                                Docteur / Chargé
+                                                                de Cours
                                                             </option>
                                                             <option value="MC">
                                                                 Maitre de
@@ -957,7 +958,7 @@ export default function Create({ courses, academicYears }) {
                                             <div>
                                                 <Link
                                                     href={route(
-                                                        "academic.enseignants.index"
+                                                        "scolarite.enseignants.index"
                                                     )}
                                                     className="btn btn-outline-secondary mr-2"
                                                 >

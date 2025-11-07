@@ -24,7 +24,7 @@ export default function RapportHeures({
 
     const handleFilterChange = () => {
         router.get(
-            route("planning.hours-report"),
+            route("scolarite.planning.hours-report"),
             {
                 class_id: filterClass,
             },
@@ -42,7 +42,9 @@ export default function RapportHeures({
         });
 
         window.open(
-            `${route("planning.hours-report")}?${params.toString()}&export=true`
+            `${route(
+                "scolarite.planning.hours-report"
+            )}?${params.toString()}&export=true`
         );
     };
 
@@ -95,7 +97,11 @@ export default function RapportHeures({
                                     </Link>
                                 </li>
                                 <li className="breadcrumb-item">
-                                    <Link href={route("planning.index")}>
+                                    <Link
+                                        href={route(
+                                            "scolarite.planning.schedules.index"
+                                        )}
+                                    >
                                         Plannings
                                     </Link>
                                 </li>
@@ -239,7 +245,9 @@ export default function RapportHeures({
                                         Imprimer
                                     </button>
                                     <Link
-                                        href={route("planning.index")}
+                                        href={route(
+                                            "scolarite.planning.schedules.index"
+                                        )}
                                         className="btn btn-secondary"
                                     >
                                         <i className="fas fa-arrow-left mr-1"></i>

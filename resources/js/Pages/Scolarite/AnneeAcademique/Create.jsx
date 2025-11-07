@@ -128,7 +128,7 @@ export default function Create() {
             }
         }
 
-        post(route("academic.years.store"));
+        post(route("scolarite.years.store"));
     };
 
     const handleSuggestionClick = (suggestion) => {
@@ -213,7 +213,7 @@ export default function Create() {
                                     </Link>
                                 </li>
                                 <li className="breadcrumb-item">
-                                    <Link href={route("academic.years.index")}>
+                                    <Link href={route("scolarite.years.index")}>
                                         Années académiques
                                     </Link>
                                 </li>
@@ -546,7 +546,7 @@ export default function Create() {
                             {/* Boutons d'action */}
                             <div className="d-flex justify-content-between mt-4">
                                 <Link
-                                    href={route("academic.years.index")}
+                                    href={route("scolarite.years.index")}
                                     className="btn btn-secondary"
                                 >
                                     <i className="fas fa-arrow-left mr-1"></i>

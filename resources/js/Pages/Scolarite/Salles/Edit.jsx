@@ -36,7 +36,7 @@ export default function Edit({ classroom, buildings, equipmentOptions }) {
 
     const submit = (e) => {
         e.preventDefault();
-        put(route("academic.classrooms.update", classroom.id));
+        put(route("scolarite.classrooms.update", classroom.id));
     };
 
     const getCapacityCategory = (capacity) => {
@@ -74,7 +74,7 @@ export default function Edit({ classroom, buildings, equipmentOptions }) {
                                 <li className="breadcrumb-item">
                                     <Link
                                         href={route(
-                                            "academic.classrooms.index"
+                                            "scolarite.classrooms.index"
                                         )}
                                     >
                                         Salles
@@ -83,7 +83,7 @@ export default function Edit({ classroom, buildings, equipmentOptions }) {
                                 <li className="breadcrumb-item">
                                     <Link
                                         href={route(
-                                            "academic.classrooms.show",
+                                            "scolarite.classrooms.show",
                                             classroom.id
                                         )}
                                     >
@@ -313,7 +313,7 @@ export default function Edit({ classroom, buildings, equipmentOptions }) {
                                 <div>
                                     <Link
                                         href={route(
-                                            "academic.classrooms.show",
+                                            "scolarite.classrooms.show",
                                             classroom.id
                                         )}
                                         className="btn btn-secondary mr-2"
@@ -323,7 +323,7 @@ export default function Edit({ classroom, buildings, equipmentOptions }) {
                                     </Link>
                                     <Link
                                         href={route(
-                                            "academic.classrooms.index"
+                                            "scolarite.classrooms.index"
                                         )}
                                         className="btn btn-outline-secondary"
                                     >
@@ -483,7 +483,7 @@ export default function Edit({ classroom, buildings, equipmentOptions }) {
                                 <div className="d-grid gap-2">
                                     <Link
                                         href={route(
-                                            "academic.classrooms.show",
+                                            "scolarite.classrooms.show",
                                             classroom.id
                                         )}
                                         className="btn btn-outline-info btn-block"

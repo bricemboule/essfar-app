@@ -139,7 +139,7 @@ export default function Edit({
             return;
         }
 
-        put(route("academic.courses.update", course.id));
+        put(route("scolarite.courses.update", course.id));
     };
 
     const formatCurrency = (amount) => {
@@ -180,7 +180,7 @@ export default function Edit({
                                 </li>
                                 <li className="breadcrumb-item">
                                     <Link
-                                        href={route("academic.courses.index")}
+                                        href={route("scolarite.courses.index")}
                                     >
                                         Cours
                                     </Link>
@@ -188,7 +188,7 @@ export default function Edit({
                                 <li className="breadcrumb-item">
                                     <Link
                                         href={route(
-                                            "academic.courses.show",
+                                            "scolarite.courses.show",
                                             course.id
                                         )}
                                     >
@@ -649,7 +649,7 @@ export default function Edit({
                                         Aucune classe disponible.
                                         <Link
                                             href={route(
-                                                "academic.classes.create"
+                                                "scolarite.classes.create"
                                             )}
                                             className="alert-link ml-1"
                                         >
@@ -750,7 +750,7 @@ export default function Edit({
                             <div className="d-flex justify-content-between mt-4">
                                 <Link
                                     href={route(
-                                        "academic.courses.show",
+                                        "scolarite.courses.show",
                                         course.id
                                     )}
                                     className="btn btn-secondary"
@@ -955,7 +955,7 @@ export default function Edit({
                                 <div className="d-grid gap-2">
                                     <Link
                                         href={route(
-                                            "academic.courses.show",
+                                            "scolarite.courses.show",
                                             course.id
                                         )}
                                         className="btn btn-outline-info btn-sm"
@@ -965,7 +965,7 @@ export default function Edit({
                                     </Link>
                                     <Link
                                         href={route(
-                                            "academic.schedules.index",
+                                            "scolarite.planning.schedules.index",
                                             { course_id: course.id }
                                         )}
                                         className="btn btn-outline-primary btn-sm"
@@ -976,7 +976,7 @@ export default function Edit({
                                     {course.schedules_count === 0 && (
                                         <Link
                                             href={route(
-                                                "academic.schedules.create",
+                                                "scolarite.planning.schedules.create",
                                                 { course_id: course.id }
                                             )}
                                             className="btn btn-outline-success btn-sm"

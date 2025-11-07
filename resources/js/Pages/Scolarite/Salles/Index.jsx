@@ -25,7 +25,7 @@ export default function Index({ classrooms, stats, filters, buildings, auth }) {
     const confirmDelete = () => {
         if (classroomToDelete) {
             destroy(
-                route("academic.classrooms.destroy", classroomToDelete.id),
+                route("scolarite.classrooms.destroy", classroomToDelete.id),
                 {
                     onSuccess: () => {
                         setShowDeleteModal(false);
@@ -37,7 +37,7 @@ export default function Index({ classrooms, stats, filters, buildings, auth }) {
     };
 
     const handleSearch = () => {
-        router.get(route("academic.classrooms.index"), {
+        router.get(route("scolarite.classrooms.index"), {
             search: searchTerm,
             building: filterBuilding,
             is_available: filterAvailable,
@@ -50,7 +50,7 @@ export default function Index({ classrooms, stats, filters, buildings, auth }) {
         setFilterBuilding("");
         setFilterAvailable("");
         setMinCapacity("");
-        router.get(route("academic.classrooms.index"));
+        router.get(route("scolarite.classrooms.index"));
     };
 
     const getCapacityColor = (capacity) => {
@@ -252,7 +252,7 @@ export default function Index({ classrooms, stats, filters, buildings, auth }) {
                         <div className="row mt-2">
                             <div className="col-md-12 text-right">
                                 <Link
-                                    href={route("academic.classrooms.create")}
+                                    href={route("scolarite.classrooms.create")}
                                     className="btn btn-success"
                                 >
                                     <i className="fas fa-plus mr-1"></i>
@@ -386,7 +386,7 @@ export default function Index({ classrooms, stats, filters, buildings, auth }) {
                                                     <div className="btn-group btn-group-sm">
                                                         <Link
                                                             href={route(
-                                                                "academic.classrooms.show",
+                                                                "scolarite.classrooms.show",
                                                                 classroom.id
                                                             )}
                                                             className="btn btn-info"
@@ -396,7 +396,7 @@ export default function Index({ classrooms, stats, filters, buildings, auth }) {
                                                         </Link>
                                                         <Link
                                                             href={route(
-                                                                "academic.classrooms.edit",
+                                                                "scolarite.classrooms.edit",
                                                                 classroom.id
                                                             )}
                                                             className="btn btn-warning"
