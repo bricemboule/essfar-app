@@ -173,57 +173,84 @@ class CourseController extends Controller
         ]);
     }
 
-    public function update(Request $request, Course $course)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'code' => 'required|string|max:50|unique:courses,code,' . $course->id,
-            'description' => 'nullable|string|max:2000',
-            'credits' => 'required|integer|min:1|max:10',
-            'total_hours' => 'required|integer|min:1|max:200',
-            'taux_horaire' => 'nullable|numeric|min:0',
-            'academic_year_id' => 'required|exists:academic_years,id',
-            'teacher_ids' => 'nullable|array',
-            'teacher_ids.*' => 'exists:users,id',
-            'class_ids' => 'required|array|min:1',
-            'class_ids.*' => 'exists:school_classes,id',
-            'class_credits' => 'nullable|array',
-            'class_credits.*' => 'nullable|integer|min:0|max:10',
-            'class_mandatory' => 'nullable|array',
-        ]);
+ public function update(Request $request, Course $course)
+{
+    // 1️⃣ Validation
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'code' => 'required|string|max:50|unique:courses,code,' . $course->id,
+        'description' => 'nullable|string|max:2000',
+        'credits' => 'required|integer|min:1|max:10',
+        'total_hours' => 'required|integer|min:1|max:200',
+        'hourly_rate' => 'nullable|numeric|min:0',
+        'academic_year_id' => 'required|integer|exists:academic_years,id',
 
-        $course->update($validated);
+        'teacher_ids' => 'nullable|array',
+        'teacher_ids.*' => 'integer|exists:users,id',
 
-        // Mettre à jour les enseignants
-        if (isset($validated['teacher_ids'])) {
-            $teacherData = [];
-            foreach ($validated['teacher_ids'] as $teacherId) {
-                $teacherData[$teacherId] = [
-                    'academic_year_id' => $validated['academic_year_id'],
-                    'taux_horaire' => $validated['taux_horaire'] ?? 0,
-                    'assigned_at' => now(),
-                ];
-            }
-            $course->teachers()->sync($teacherData);
-        }
+        'class_ids' => 'required|array|min:1',
 
-        // Mettre à jour les classes
-        $classData = [];
-        foreach ($validated['class_ids'] as $classId) {
-            $classData[$classId] = [
+        'objectives' => 'nullable|string',
+        'prerequisites' => 'nullable|string',
+        'evaluation_method' => 'nullable|string',
+        'resources' => 'nullable|string',
+    ]);
+
+    // 2️⃣ Mise à jour du cours
+    $course->update([
+        'name' => $validated['name'],
+        'code' => $validated['code'],
+        'description' => $validated['description'] ?? null,
+        'credits' => $validated['credits'],
+        'total_hours' => $validated['total_hours'],
+        'academic_year_id' => $validated['academic_year_id'],
+    ]);
+
+    // 3️⃣ Mise à jour des enseignants
+    $course->teachers()->detach();
+    if (!empty($validated['teacher_ids'])) {
+        foreach ($validated['teacher_ids'] as $teacherId) {
+            $course->teachers()->attach($teacherId, [
                 'academic_year_id' => $validated['academic_year_id'],
-                'teacher_id' => $validated['teacher_ids'][0] ?? null,
-                'credits' => $validated['class_credits'][$classId] ?? null,
-                'is_mandatory' => isset($validated['class_mandatory'][$classId]) 
-                    ? (bool)$validated['class_mandatory'][$classId] 
-                    : true,
+                'taux_horaire' => $validated['hourly_rate'] ?? 0,
+                'assigned_at' => now(),
+            ]);
+        }
+    }
+
+    // 4️⃣ Normaliser class_ids
+    $classes = [];
+    foreach ($validated['class_ids'] as $item) {
+        if (is_array($item)) {
+            $classes[] = [
+                'id' => $item['id'],
+                'credits' => $item['credits'] ?? $validated['credits'],
+                'is_mandatory' => isset($item['is_mandatory']) ? (bool)$item['is_mandatory'] : true,
+            ];
+        } else {
+            $classes[] = [
+                'id' => $item,
+                'credits' => $validated['credits'],
+                'is_mandatory' => true,
             ];
         }
-        $course->classes()->sync($classData);
-
-        return redirect()->route('scolarite.courses.index')
-            ->with('success', 'Cours mis à jour avec succès.');
     }
+
+    // 5️⃣ Mise à jour des classes
+    $course->classes()->detach();
+    foreach ($classes as $class) {
+        $course->classes()->attach($class['id'], [
+            'academic_year_id' => $validated['academic_year_id'],
+            'teacher_id' => $validated['teacher_ids'][0] ?? null,
+            'credits' => $class['credits'],
+            'is_mandatory' => $class['is_mandatory'],
+        ]);
+    }
+
+    return redirect()->route('scolarite.courses.index')
+        ->with('success', 'Cours mis à jour avec succès.');
+}
+
 
     public function destroy(Course $course)
     {

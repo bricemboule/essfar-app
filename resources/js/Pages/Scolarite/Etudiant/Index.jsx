@@ -321,7 +321,7 @@ export default function Index({ students, classes, filters, auth }) {
                                     className="btn btn-primary btn-block btn-lg"
                                 >
                                     <i className="fas fa-calendar-check mr-2"></i>
-                                    Gestion des absences et retards
+                                    Absences et retards
                                 </Link>
                             </div>
                             <div className="col-md-3">
@@ -1223,27 +1223,7 @@ export default function Index({ students, classes, filters, auth }) {
                                 </button>
                             </div>
                             <div className="modal-body">
-                                {/* Instructions */}
-                                <div className="alert alert-info">
-                                    <h6>
-                                        <i className="fas fa-info-circle mr-1"></i>
-                                        Instructions :
-                                    </h6>
-                                    <ol className="mb-0 small">
-                                        <li>
-                                            Téléchargez le modèle Excel
-                                            ci-dessous
-                                        </li>
-                                        <li>
-                                            Remplissez les informations des
-                                            étudiants
-                                        </li>
-                                        <li>Importez le fichier rempli</li>
-                                        <li>
-                                            Vérifiez les erreurs éventuelles
-                                        </li>
-                                    </ol>
-                                </div>
+                             
 
                                 {/* Bouton de téléchargement du template */}
                                 <div className="text-center mb-4">
@@ -1290,65 +1270,6 @@ export default function Index({ students, classes, filters, auth }) {
                                         Formats acceptés : .xlsx, .xls, .csv
                                         (taille max: 5 Mo)
                                     </small>
-                                </div>
-
-                                {/* Colonnes requises */}
-                                <div className="alert alert-warning">
-                                    <h6>
-                                        <i className="fas fa-exclamation-triangle mr-1"></i>
-                                        Colonnes obligatoires :
-                                    </h6>
-                                    <div className="row">
-                                        <div className="col-md-6">
-                                            <ul className="small mb-0">
-                                                <li>
-                                                    <strong>name</strong> - Nom
-                                                    et prénom
-                                                </li>
-                                                <li>
-                                                    <strong>email</strong> -
-                                                    Email unique
-                                                </li>
-                                                <li>
-                                                    <strong>
-                                                        date_naissance
-                                                    </strong>{" "}
-                                                    - Format: JJ/MM/AAAA
-                                                </li>
-                                                <li>
-                                                    <strong>
-                                                        lieu_naissance
-                                                    </strong>{" "}
-                                                    - Lieu de naissance
-                                                </li>
-                                                <li>
-                                                    <strong>sexe</strong> - M ou
-                                                    F
-                                                </li>
-                                            </ul>
-                                        </div>
-                                        <div className="col-md-6">
-                                            <ul className="small mb-0">
-                                                <li>
-                                                    <strong>
-                                                        school_class_id
-                                                    </strong>{" "}
-                                                    - ID de la classe
-                                                </li>
-                                                <li>
-                                                    <strong>
-                                                        academic_year_id
-                                                    </strong>{" "}
-                                                    - ID année académique
-                                                </li>
-                                            </ul>
-                                            <p className="small text-info mt-2 mb-0">
-                                                <i className="fas fa-lightbulb mr-1"></i>
-                                                Les autres colonnes sont
-                                                optionnelles
-                                            </p>
-                                        </div>
-                                    </div>
                                 </div>
 
                                 {/* Erreurs d'import */}
